@@ -11,8 +11,9 @@ class SudokuGrid {
         SudokuGrid(int, string);
         ~SudokuGrid();
         
-        bool add_cell(int, int, int, int);
+        bool add_cell(int, int, int);
         void populate_grid();
+        void print_grid();
     
     private:
         int blanks;

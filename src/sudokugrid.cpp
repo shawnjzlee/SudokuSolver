@@ -38,8 +38,25 @@ void SudokuGrid::init(int size, string file) {
         cout << "Failed to open file.\n";
         exit(-1);
     }
+    
+    if (size < 0) {
+        cout << "Grid size cannot be less than 0\n";
+        exit(-1);
+    }
+    int square_root(round(sqrt(size)));
+    if (size == square_root * square_root) {
+        this->size = size;
+        grid.resize(size);
+        for(auto &col : grid) col.resize(size);
+    }
+    else {
+        cout << "Grid size is not a perfect square\n";
+        exit(-1);
+    }
+    
     char next;
     int row (0), col (0), cell_value (0);
+    blanks = 0;
     
     while(!infile.eof()) {
         infile.get(next);
@@ -50,13 +67,16 @@ void SudokuGrid::init(int size, string file) {
         else {
             if (row > size || col > size) continue;
             
-            cell_value = next;
+            cell_value = (int)next - (int)'0';
+            if(cell_value == 0) blanks++;
             grid[row][col] = cell_value;
             col++;
         }
     }
     row = col = 0;
     infile.close();
+    cout << "Grid initialized:\n";
+    print_grid();
 }
 
 void SudokuGrid::find_next_cell(int &row, int &col) {
@@ -65,12 +85,18 @@ void SudokuGrid::find_next_cell(int &row, int &col) {
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
             for (int k = 1; k < size+1; k++) {
-                if (add_cell(1, i, j, k))
+                if (add_cell(1, i, j, k)) {
+                    // cout << "Added to potential_vals: [" << i << ", " << j << "] with " << k << endl;
                     potential_vals.at(i).at(j)++;
-                    
+                }
+                
                 if (potential_vals.at(i).at(j) < min_potential_vals &&
-                    potential_vals.at(i).at(j) > 0)
+                    potential_vals.at(i).at(j) != 0) {
                         min_potential_vals = potential_vals.at(i).at(j);
+                    }
+            
+                // cout << "Minimum potential values: " << min_potential_vals << endl;
+                
             }
         }
     }
@@ -85,11 +111,6 @@ void SudokuGrid::find_next_cell(int &row, int &col) {
     }
 }
 
-/* @param: 
-        [1] takes subgrid label (starting from 0),
-        [2] row to access, [3] col to access, 
-        [4] cell_value to place into the cell
-*/
 bool SudokuGrid::add_cell(bool test, int row, int col, int cell_value) {
     // optimize
     
@@ -134,6 +155,7 @@ bool SudokuGrid::add_cell(bool test, int row, int col, int cell_value) {
     if (!test) {
         grid.at(row).at(col) = cell_value;
         blanks--;
+        // print_grid();
     }
     return true;
 }
@@ -141,12 +163,12 @@ bool SudokuGrid::add_cell(bool test, int row, int col, int cell_value) {
 void SudokuGrid::remove_cell(int row, int col) { grid.at(row).at(col) = 0; }
 
 bool SudokuGrid::solve_grid() {
-    
-    int row = 0, col = 0;
-    if (blanks == 0) return true;
+    int row (0), col (0);
+    if (!blanks) return true;
     
     find_next_cell(row, col);
     for(int i = 1; i < size + 1; i++) {
+        // cout << "[" << row << ", " << col << "]: " << i << endl;
         if (add_cell(0, row, col, i)) {
             if (solve_grid()) {
                 return true;

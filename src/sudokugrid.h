@@ -7,11 +7,16 @@ using namespace std;
 
 class SudokuGrid {
     public:
-        SudokuGrid(int);
-        SudokuGrid(int, string);
+        SudokuGrid();
         ~SudokuGrid();
         
-        bool add_cell(int, int, int);
+        void init(int);
+        void init(int, string);
+        
+        void find_next_cell(int&, int&);
+        bool add_cell(bool, int, int, int);
+        void remove_cell(int, int);
+        bool solve_grid();
         void populate_grid();
         void print_grid();
     

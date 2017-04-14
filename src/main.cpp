@@ -19,11 +19,13 @@ int main(int argc, char * argv[]) {
     else
         grid.init(flags.get<int>("grid_size"), flags.get<string>("file"));
     
-    if(grid.solve_grid()) {
-        cout << "Solution found: \n";
-        grid.print_grid();
-    }
-    else cout << "No solution could be found for the generated grid.\n";
+    grid.find_potential_val();
+    
+    // if(grid.solve_grid()) {
+    //     cout << "Solution found: \n";
+    //     grid.print_grid();
+    // }
+    // else cout << "No solution could be found for the generated grid.\n";
     
     return 0;
 }

@@ -2,6 +2,7 @@
 #define SUDOKUGRID_H
 
 #include <vector>
+#include <bitset>
 
 using namespace std;
 
@@ -13,8 +14,9 @@ class SudokuGrid {
         void init(int);
         void init(int, string);
         
-        void find_next_cell(int&, int&);
+        void find_potential_val();
         bool add_cell(bool, int, int, int);
+        void reduce(int, int, int);
         void remove_cell(int, int);
         bool solve_grid();
         void populate_grid();
@@ -23,7 +25,7 @@ class SudokuGrid {
     private:
         int blanks;
         int size;
-        vector<vector<int>> grid;
+        vector<vector<vector<bool>>> grid;
 };
 
 #endif

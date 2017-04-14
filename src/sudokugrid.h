@@ -11,7 +11,6 @@ class SudokuGrid {
         SudokuGrid();
         ~SudokuGrid();
         
-        void init(int);
         void init(int, string);
         
         void find_potential_val();
@@ -19,7 +18,6 @@ class SudokuGrid {
         void reduce(int, int, int);
         void remove_cell(int, int);
         bool solve_grid();
-        void populate_grid();
         void print_grid();
     
     private:

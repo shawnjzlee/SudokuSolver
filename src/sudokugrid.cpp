@@ -13,30 +13,6 @@ using namespace std;
 
 SudokuGrid::SudokuGrid() : blanks(0), size(0) { }
 
-void SudokuGrid::init(int size) {
-    if (size < 0) {
-        cout << "Grid size cannot be less than 0\n";
-        exit(-1);
-    }
-    int square_root(round(sqrt(size)));
-    if (size == square_root * square_root) {
-        this->size = size;
-        grid.resize(size);
-        for(auto &col : grid) {
-            col.resize(size);
-            for(auto &cell : col) cell.resize(size);
-        }
-    }
-    else {
-        cout << "Grid size is not a perfect square\n";
-        exit(-1);
-    }
-    cout << "Printing grid...\n";
-    print_grid();
-    // cout << "Populating grid...\n";
-    // populate_grid();
-}
-
 void SudokuGrid::init(int size, string file) {
     ifstream infile(file);
     if (infile.fail()) {
@@ -209,36 +185,6 @@ void SudokuGrid::find_potential_val() {
 //         }
 //     }
 //     return false;
-// }
-
-// void SudokuGrid::populate_grid() {
-//     srand(time(0));
-    
-//     int cells_to_populate = (rand() % (size * size)) - 1;
-    
-//     int cell_value (0), row (0), col (0), subgrid (0);
-//     bool return_val = false, do_once = true;
-//     while(cells_to_populate > 0) {
-//         row = rand() % size;
-//         col = rand() % size;
-//         cell_value = (rand() % size) + 1;
-        
-//         if(do_once) {
-//             cout << cells_to_populate << endl;
-//             do_once = false;
-//         }
-        
-//         return_val = add_cell(0, row, col, cell_value);
-        
-//         // cout << cells_to_populate << ": " << row << " , " << col 
-//             //  << " with value " << cell_value << " returned " << return_val << endl;
-        
-//         // print_grid();
-//         // cout << endl << endl;
-//         if(return_val) cells_to_populate--;
-//     }
-//     cout << "Grid initialized: \n";
-//     print_grid();
 // }
 
 void SudokuGrid::print_grid() {

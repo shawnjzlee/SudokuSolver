@@ -1,29 +1,24 @@
 #ifndef SUDOKUGRID_H
 #define SUDOKUGRID_H
 
+#include <string>
 #include <vector>
-#include <bitset>
+#include "point.h"
 
 using namespace std;
 
 class SudokuGrid {
     public:
-        SudokuGrid();
+        SudokuGrid(int, string);
         ~SudokuGrid();
         
-        void init(int, string);
-        
-        void find_potential_val();
-        bool add_cell(bool, int, int, int);
-        void reduce(int, int, int);
-        void remove_cell(int, int);
-        bool solve_grid();
+        bool add_cell(const int, const int, const int);
         void print_grid();
-    
+        
     private:
         int blanks;
         int size;
-        vector<vector<vector<bool>>> grid;
+        vector<Point> grid;
 };
 
 #endif

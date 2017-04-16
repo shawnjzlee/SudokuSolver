@@ -1,7 +1,7 @@
 CC=g++-5
 CFLAGS=-c -std=c++14
 LDFLAGS=-pthread -lpthread
-SOURCES=main.cpp sudokugrid.cpp
+SOURCES=main.cpp sudokugrid.cpp point.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=sudoku_solver
 BUILD_DIR=./bin

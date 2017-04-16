@@ -3,7 +3,9 @@
 
 #include "cmdline.h"
 #include "sudokugrid.h"
-using namespace std;
+using namespace std; 
+
+#define PATH "../../dataset/"
 
 int main(int argc, char * argv[]) {
     cmdline::parser flags;
@@ -13,11 +15,9 @@ int main(int argc, char * argv[]) {
     flags.add<string>("file", 'f', "pass in a file to initialize sudoku grid (string)", true, "");
     flags.parse_check(argc, argv);    
     
-    SudokuGrid grid;
-
-    grid.init(flags.get<int>("grid_size"), flags.get<string>("file"));
+    SudokuGrid grid(flags.get<int>("grid_size"), PATH + flags.get<string>("file"));
     
-    grid.find_potential_val();
+    // grid.find_potential_val();
     
     // if(grid.solve_grid()) {
     //     cout << "Solution found: \n";

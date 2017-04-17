@@ -56,9 +56,14 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
     }
     row = col = 0;
     
-    infile.close();
     cout << "Grid initialized:\n";
     print_grid();
+    
+    for(int index = 0; index < grid.size(); index++)
+        if(grid.at(index).is_singleton())
+            reduce(index, grid.at(index).possible_values().at(0));
+    
+    infile.close();
 }
 
 SudokuGrid::SudokuGrid(const vector<Point> grid) {

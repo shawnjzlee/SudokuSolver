@@ -16,7 +16,8 @@ bool Point::is_singleton() {
 }
 
 void Point::reduce(const int cell_value) {
-    value.at(cell_value - 1) = false;
+    if(!is_singleton())
+        value.at(cell_value - 1) = false;
 }
 
 void Point::reduce_all_except(const int cell_value) {

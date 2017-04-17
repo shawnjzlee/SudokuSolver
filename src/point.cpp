@@ -25,6 +25,12 @@ void Point::reduce_all_except(const int cell_value) {
     value.flip();
 }
 
+void Point::isolate(const int cell_value) {
+    vector<bool> temp(value.size(), false);
+    temp.at(cell_value - 1) = true;
+    value = temp;
+}
+
 vector<int> Point::possible_values() {
     vector<int> values;
     for(int i = 0; i < value.size(); i++) {

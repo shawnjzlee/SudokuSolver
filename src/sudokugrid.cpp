@@ -72,9 +72,9 @@ SudokuGrid::SudokuGrid(const vector<Point> grid) {
 
 SudokuGrid::SudokuGrid(const int depth, const int path_cost, const int size, const vector<int> unsolved, const vector<Point> grid) :
         size(size) {
+    // i'm a child!
     this->node_status.depth = depth;
     this->node_status.path_cost = path_cost;
-    this->size = size;
     this->unsolved = unsolved;
     this->grid = grid;
 }
@@ -133,7 +133,6 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
     }
     for(int i = row_left_bound; i < row_right_bound; i++) {
         for(int j = col_left_bound; j < col_right_bound; j++) {
-            // cout << "I: " << index << " " << i * size + j << " [" << i << ", " << j << "]; V: " << cell_value << "\n";
             if(grid.at(j * size + i).is_singleton())
                 if(grid.at(j * size + i).possible_values().at(0) == cell_value)
                     return false;
@@ -164,9 +163,18 @@ void SudokuGrid::solve() {
         while(!expanded.empty()) {
             temp = expanded.front();
             expanded.pop();
-            if(temp.grid == child.grid) return false;
+            if(temp.grid == child.grid) {
+                cout << "Not passed\n";
+                return false;
+            }
         }
+        cout << "Passed check\n";
         return true;
+    };
+    
+    auto expanded_node = [](SudokuGrid child, int unsolved_index) {
+        child.unsolved.erase(find(child.unsolved.begin(), child.unsolved.end(), unsolved_index));
+        return child;
     };
     
     queue<SudokuGrid> fringe;
@@ -181,6 +189,8 @@ void SudokuGrid::solve() {
         parent_node = fringe.front();
         fringe.pop();
         
+        // cout << parent_node.unsolved.size() << "\n";
+        
         if(parent_node.unsolved.empty()) {
             cout << "Solution found\n";
             parent_node.print_grid();
@@ -194,11 +204,36 @@ void SudokuGrid::solve() {
                               parent_node.grid);
                               
         int unsolved_index = child_node.min_possible_values();
+        cout << "UI: " << unsolved_index << endl;
         
-        // cout << unsolved_index << endl;
-        // for(auto i : grid.at(unsolved_index).possible_values())
-        //     cout << i << " " << endl;
+        // BRANCHING FACTOR
+        for(auto cell_value : child_node.grid.at(unsolved_index).possible_values()) {
+            cout << "P: " << child_node.grid.at(unsolved_index).possible_values().size() << endl;
+            cout << "I: " << unsolved_index << endl;
+            cout << "U: " << child_node.unsolved.size() << endl;
+            child_node.grid = parent_node.grid;
+            
+            child_node.grid.at(unsolved_index).isolate(cell_value);
+            child_node.reduce(unsolved_index, cell_value);
+            
+            cout << "\nBranching:";
+            child_node.print_grid();
+            
+            if(check(child_node, expanded)) {
+                cout << "F_B: " << fringe.size() << endl;
+                fringe.push(expanded_node(child_node, unsolved_index));
+                expanded.push(expanded_node(child_node, unsolved_index));
+                cout << "F_A: " << fringe.size() << endl;
+                cout << "U_M: " << child_node.unsolved.size() << endl;
+            }
+        }
+        
+        child_node.grid = parent_node.grid;
+        if(fringe.size() > max_queued_nodes)
+            max_queued_nodes = fringe.size();
     }
+    
+    cout << "Fringe empty. Exiting...\n" << endl;
 }
 
 

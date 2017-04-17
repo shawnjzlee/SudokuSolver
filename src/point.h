@@ -16,6 +16,7 @@ struct Point {
     bool is_singleton();
     void reduce(const int);
     void reduce_all_except(const int);
+    void isolate(const int);
     vector<int> possible_values();
 };
 

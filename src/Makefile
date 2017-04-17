@@ -25,3 +25,6 @@ clean:
 copy:
 	mkdir -p $(BUILD_DIR)
 	cp -f ./Makefile $(BUILD_DIR)/Makefile
+	
+restart:
+	cd .. && make && cd bin/ && ./sudoku_solver -s 9 -f p0.txt

@@ -6,14 +6,14 @@
 using namespace std;
 
 struct Point {
-    int row;
-    int col;
     vector<bool> value;    
     
     Point();
-    Point(int, int, int, int);
+    Point(const int, const int);
     
     bool is_singleton();
+    void reduce(const int);
+    void reduce_all_except(const int);
     vector<int> possible_values();
 };
 

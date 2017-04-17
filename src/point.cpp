@@ -1,31 +1,30 @@
+#include <algorithm>
+#include <iostream>
 #include "point.h"
 
 using namespace std;
 
-Point::Point() : row(0), col(0) { 
-    value.resize(9, 0);
-};
-
-Point::Point(int row, int col, int size, int cell_value) : 
-        row(row), col(col) { 
-    value.resize(size, 0);
-    if(cell_value > 0) value.at(cell_value - 1) = 1;
-}
+Point::Point() { }
 
 bool Point::is_singleton() {
-    int count = 0;
-    for(auto i : value) {
-        if(i == 1) count++;
-        if(count > 1) return false;
-    }
-    if(count == 0) return false;
-    return true; 
+    // for(auto i : value) cout << i << " ";
+    return count(value.begin(), value.end(), true) == 1 ? true : false;
+}
+
+void Point::reduce(const int cell_value) {
+    value.at(cell_value - 1) = false;
+}
+
+void Point::reduce_all_except(const int cell_value) {
+    value.at(cell_value - 1) = false;
+    value.flip();
 }
 
 vector<int> Point::possible_values() {
     vector<int> values;
     for(int i = 0; i < value.size(); i++) {
-        if(value.at(i) == 1) values.push_back(i + 1);
+        if(value.at(i) == true) 
+            values.push_back(i + 1);
     }
     return values;
 }

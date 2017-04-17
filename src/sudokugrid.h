@@ -4,20 +4,29 @@
 #include <string>
 #include <vector>
 #include "point.h"
+#include "treenode.h"
 
 using namespace std;
 
-class SudokuGrid {
+class SudokuGrid : public TreeNode {
     public:
-        SudokuGrid(int, string);
+        SudokuGrid();
+        SudokuGrid(const int, const string);
         ~SudokuGrid();
         
-        bool add_cell(const int, const int, const int);
+        vector<Point> get_node_state() const;
+        void node_expansion();
+        
+        int index(const int, const int);
+        
+        bool valid_reduction(const int, const int);
+        
+        void exit_from_error(const int);
         void print_grid();
         
     private:
-        int blanks;
         int size;
+        vector<int> unsolved;
         vector<Point> grid;
 };
 

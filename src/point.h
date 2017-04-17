@@ -11,6 +11,8 @@ struct Point {
     Point();
     Point(const int, const int);
     
+    bool operator==(const Point&) const;
+    
     bool is_singleton();
     void reduce(const int);
     void reduce_all_except(const int);

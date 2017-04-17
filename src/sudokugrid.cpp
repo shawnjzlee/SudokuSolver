@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <queue>
 
 #include "sudokugrid.h"
 
@@ -42,7 +43,9 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
             
             grid.at(index(row, col)).value.resize(size, true);
             
-            if (cell_value == 0) unsolved.push_back(index(row, col));
+            if (cell_value == 0) {
+                unsolved.push_back(index(row, col));
+            }
             else {
                 bool rc = valid_reduction(index(row, col), cell_value);
                 if (!rc) exit_from_error(4);
@@ -58,6 +61,19 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
     print_grid();
 }
 
+SudokuGrid::SudokuGrid(const vector<Point> grid) {
+    this->grid = grid;
+}
+
+SudokuGrid::SudokuGrid(const int depth, const int path_cost, const int size, const vector<int> unsolved, const vector<Point> grid) :
+        size(size) {
+    this->node_status.depth = depth;
+    this->node_status.path_cost = path_cost;
+    this->size = size;
+    this->unsolved = unsolved;
+    this->grid = grid;
+}
+
 SudokuGrid::~SudokuGrid() { } 
 
 vector<Point> SudokuGrid::get_node_state() const {
@@ -68,6 +84,14 @@ void SudokuGrid::node_expansion() { }
 
 int SudokuGrid::index(const int row, const int col) {
     return row * size + col;
+}
+
+void SudokuGrid::reduce(const int index, const int cell_value) {
+    int traversed(0), row((index / size) * size), col(index % size);
+    for(; traversed < size; row++, col+=size, traversed++) {
+        grid.at(row).reduce(cell_value);
+        grid.at(col).reduce(cell_value);
+    }
 }
 
 bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
@@ -113,12 +137,73 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
     return true;
 }
 
+int SudokuGrid::min_possible_values() {
+    if(unsolved.size() == 0) exit_from_error(5);
+    else if(unsolved.size() == 1) return unsolved.front();
+    else {
+        int curr_min_index(unsolved.front());
+        for(auto i : unsolved) {
+            // i is an index
+            int count = grid.at(i).possible_values().size();
+            if (count < grid.at(curr_min_index).possible_values().size()) {
+                curr_min_index = i;
+            }
+        }
+        return curr_min_index;
+    }
+}
+
+void SudokuGrid::solve() {
+    auto check = [](SudokuGrid child, queue<SudokuGrid> expanded) {
+        SudokuGrid temp(child.grid);
+        while(!expanded.empty()) {
+            temp = expanded.front();
+            expanded.pop();
+            if(temp.grid == child.grid) return false;
+        }
+        return true;
+    };
+    
+    queue<SudokuGrid> fringe;
+    queue<SudokuGrid> expanded;
+    
+    SudokuGrid parent_node(0, 0, size, unsolved, grid);
+    fringe.push(parent_node);
+    
+    int max_queued_nodes = 0;
+    
+    while(!fringe.empty()) {
+        parent_node = fringe.front();
+        fringe.pop();
+        
+        if(parent_node.unsolved.empty()) {
+            cout << "Solution found\n";
+            parent_node.print_grid();
+            return;
+        }
+        
+        SudokuGrid child_node(parent_node.node_status.depth + 1,
+                              parent_node.node_status.path_cost + 1,
+                              parent_node.size,
+                              parent_node.unsolved,
+                              parent_node.grid);
+                              
+        int unsolved_index = child_node.min_possible_values();
+        
+        // cout << unsolved_index << endl;
+        // for(auto i : grid.at(unsolved_index).possible_values())
+        //     cout << i << " " << endl;
+    }
+}
+
+
 void SudokuGrid::exit_from_error(const int ret) {
     switch(ret) {
         case 1: cout << "Failed to open file.\n"; break;
         case 2: cout << "Grid size cannot be less than 0.\n"; break;
         case 3: cout << "Grid size is not a perfect square.\n"; break;
         case 4: cout << "Incorrect value placement. Please check file.\n"; break;
+        case 5: cout << "Returned no unsolved cells.\n"; print_grid(); break;
         default: cout << "Undetermined error.\n"; break;
     }
     exit(-1);

@@ -28,3 +28,6 @@ copy:
 	
 restart:
 	cd .. && make && cd bin/ && ./sudoku_solver -s 9 -f p0.txt
+	
+restart_d:
+	cd .. && make debug && cd bin/ && gdb --args ./sudoku_solver -s 9 -f p0.txt

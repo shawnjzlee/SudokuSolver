@@ -192,7 +192,7 @@ void SudokuGrid::solve() {
         // cout << parent_node.unsolved.size() << "\n";
         
         if(parent_node.unsolved.empty()) {
-            cout << "Solution found\n";
+            cout << "\n\nSolution found:\n";
             parent_node.print_grid();
             return;
         }
@@ -204,28 +204,21 @@ void SudokuGrid::solve() {
                               parent_node.grid);
                               
         int unsolved_index = child_node.min_possible_values();
-        cout << "UI: " << unsolved_index << endl;
         
         // BRANCHING FACTOR
         for(auto cell_value : child_node.grid.at(unsolved_index).possible_values()) {
-            cout << "P: " << child_node.grid.at(unsolved_index).possible_values().size() << endl;
-            cout << "I: " << unsolved_index << endl;
-            cout << "U: " << child_node.unsolved.size() << endl;
             child_node.grid = parent_node.grid;
             
             child_node.grid.at(unsolved_index).isolate(cell_value);
             child_node.reduce(unsolved_index, cell_value);
             
-            cout << "\nBranching:";
-            child_node.print_grid();
+            // cout << "Branching:";
+            // child_node.print_grid();
             
-            if(check(child_node, expanded)) {
-                cout << "F_B: " << fringe.size() << endl;
+            // if(check(child_node, expanded)) {
                 fringe.push(expanded_node(child_node, unsolved_index));
                 expanded.push(expanded_node(child_node, unsolved_index));
-                cout << "F_A: " << fringe.size() << endl;
-                cout << "U_M: " << child_node.unsolved.size() << endl;
-            }
+            // }
         }
         
         child_node.grid = parent_node.grid;

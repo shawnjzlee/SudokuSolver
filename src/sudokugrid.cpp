@@ -92,10 +92,39 @@ int SudokuGrid::index(const int row, const int col) {
 }
 
 void SudokuGrid::reduce(const int index, const int cell_value) {
+    // check row & col
     int traversed(0), row((index / size) * size), col(index % size);
     for(; traversed < size; row++, col+=size, traversed++) {
         grid.at(row).reduce(cell_value);
         grid.at(col).reduce(cell_value);
+    }
+    // check each subgrid
+    int row_left_bound(0), row_right_bound(0), col_left_bound(0), col_right_bound(0);
+    if((index % size) < sqrt(size)) row_right_bound = sqrt(size);
+    else if((index % size) < (2* sqrt(size))) {
+        row_left_bound = sqrt(size);
+        row_right_bound = 2 * sqrt(size);
+    }
+    else {
+        row_left_bound = 2 * sqrt(size);
+        row_right_bound = size;
+    }
+    
+    if((index / size) < sqrt(size)) col_right_bound = sqrt(size);
+    else if((index / size) < (2* sqrt(size))) {
+        col_left_bound = sqrt(size);
+        col_right_bound = 2 * sqrt(size);
+    }
+    else {
+        col_left_bound = 2 * sqrt(size);
+        col_right_bound = size;
+    }
+    for(int i = row_left_bound; i < row_right_bound; i++) {
+        for(int j = col_left_bound; j < col_right_bound; j++) {
+            if(grid.at(j * size + i).is_singleton())
+                if(grid.at(j * size + i).possible_values().at(0) == cell_value)
+                    grid.at(j * size + i).reduce(cell_value);
+        }
     }
 }
 
@@ -194,6 +223,7 @@ void SudokuGrid::solve() {
         if(parent_node.unsolved.empty()) {
             cout << "\n\nSolution found:\n";
             parent_node.print_grid();
+            cout << "Depth: " << parent_node.node_status.depth;
             return;
         }
         

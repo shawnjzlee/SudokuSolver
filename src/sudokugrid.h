@@ -19,6 +19,8 @@ class SudokuGrid : public TreeNode {
         vector<Point> get_node_state() const;
         void node_expansion();
         
+        bool operator==(const SudokuGrid&) const;
+        
         int index(const int, const int);
         int min_possible_values();
         
@@ -27,6 +29,7 @@ class SudokuGrid : public TreeNode {
         
         void solve();
         void exit_from_error(const int);
+        void diff_and_print_grid(SudokuGrid, SudokuGrid);
         void print_grid();
         
     private:

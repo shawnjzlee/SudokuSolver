@@ -4,14 +4,13 @@
 
 using namespace std;
 
-Point::Point() { }
+Point::Point() : isolated(false) { }
 
 bool Point::operator==(const Point& rhs) const {
     return this->value == rhs.value;
 }
 
 bool Point::is_singleton() {
-    // for(auto i : value) cout << i << " ";
     return count(value.begin(), value.end(), true) == 1 ? true : false;
 }
 
@@ -28,6 +27,7 @@ void Point::reduce_all_except(const int cell_value) {
 void Point::isolate(const int cell_value) {
     vector<bool> temp(value.size(), false);
     temp.at(cell_value - 1) = true;
+    isolated = true;
     value = temp;
 }
 

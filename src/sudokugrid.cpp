@@ -87,6 +87,10 @@ vector<Point> SudokuGrid::get_node_state() const {
 
 void SudokuGrid::node_expansion() { }
 
+bool SudokuGrid::operator==(const SudokuGrid& rhs) const {
+    return this->grid == rhs.grid;
+}
+
 int SudokuGrid::index(const int row, const int col) {
     return row * size + col;
 }
@@ -178,7 +182,8 @@ int SudokuGrid::min_possible_values() {
         for(auto i : unsolved) {
             // i is an index
             int count = grid.at(i).possible_values().size();
-            if (count < grid.at(curr_min_index).possible_values().size()) {
+            if (count < grid.at(curr_min_index).possible_values().size() && 
+                grid.at(curr_min_index).possible_values().size() > 1) {
                 curr_min_index = i;
             }
         }
@@ -192,12 +197,12 @@ void SudokuGrid::solve() {
         while(!expanded.empty()) {
             temp = expanded.front();
             expanded.pop();
-            if(temp.grid == child.grid) {
-                cout << "Not passed\n";
+            if(temp == child) {
+                // cout << "Not passed\n";
                 return false;
             }
         }
-        cout << "Passed check\n";
+        // cout << "Passed check\n";
         return true;
     };
     
@@ -232,7 +237,7 @@ void SudokuGrid::solve() {
                               parent_node.size,
                               parent_node.unsolved,
                               parent_node.grid);
-                              
+        
         int unsolved_index = child_node.min_possible_values();
         
         // BRANCHING FACTOR
@@ -242,13 +247,15 @@ void SudokuGrid::solve() {
             child_node.grid.at(unsolved_index).isolate(cell_value);
             child_node.reduce(unsolved_index, cell_value);
             
-            // cout << "Branching:";
-            // child_node.print_grid();
+            cout << "\nBranching...\n";
+            cout << "Modifying index " << unsolved_index << " (" << unsolved_index % (size - 1) << "," << unsolved_index / (size - 1) << ")\n";
+            cout << "Appending value: " << cell_value << endl;
+            diff_and_print_grid(parent_node, child_node);
             
-            // if(check(child_node, expanded)) {
+            if(check(child_node, expanded)) {
                 fringe.push(expanded_node(child_node, unsolved_index));
                 expanded.push(expanded_node(child_node, unsolved_index));
-            // }
+            }
         }
         
         child_node.grid = parent_node.grid;
@@ -271,6 +278,24 @@ void SudokuGrid::exit_from_error(const int ret) {
     }
     exit(-1);
 }
+
+void SudokuGrid::diff_and_print_grid(SudokuGrid parent_node, SudokuGrid child_node) {
+    for(int i(0); i < parent_node.grid.size(); i++) {
+        int parent_node_cv(0), child_node_cv(0);
+        if(i % size == 0) cout << endl;
+        if(parent_node.grid.at(i).is_singleton()) parent_node_cv = parent_node.grid.at(i).possible_values().at(0);
+        if(child_node.grid.at(i).is_singleton()) child_node_cv = child_node.grid.at(i).possible_values().at(0);
+        
+        // cout << parent_node_cv << "\t" << child_node_cv << endl << endl;
+        
+        if(parent_node_cv != child_node_cv) cout << "\033[2;34m" << child_node_cv << "\033[0m ";
+        else if(child_node.grid.at(i).isolated == true) cout << "\033[2;31m" << child_node_cv << "\033[0m ";
+        else if(parent_node_cv == child_node_cv) cout << child_node_cv << " ";
+        else cout << "0 ";
+    }
+    cout << endl;
+}
+
 
 void SudokuGrid::print_grid() {
     for(int i(0); i < grid.size(); i++) {

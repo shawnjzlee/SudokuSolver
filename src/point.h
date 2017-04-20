@@ -6,7 +6,8 @@
 using namespace std;
 
 struct Point {
-    vector<bool> value;    
+    vector<bool> value;
+    bool isolated;
     
     Point();
     Point(const int, const int);

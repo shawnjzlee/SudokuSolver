@@ -18,13 +18,6 @@ int main(int argc, char * argv[]) {
     SudokuGrid grid(flags.get<int>("grid_size"), PATH + flags.get<string>("file"));
     
     grid.solve();
-    // grid.find_potential_val();
-    
-    // if(grid.solve_grid()) {
-    //     cout << "Solution found: \n";
-    //     grid.print_grid();
-    // }
-    // else cout << "No solution could be found for the generated grid.\n";
     
     return 0;
 }

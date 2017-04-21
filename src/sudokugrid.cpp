@@ -175,6 +175,11 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
 }
 
 int SudokuGrid::min_possible_values() {
+    // cout << endl;
+    // for(auto i : unsolved)
+    //     cout << i << " ";
+    // cout << endl;
+    
     if(unsolved.size() == 0) exit_from_error(5);
     else if(unsolved.size() == 1) return unsolved.front();
     else {
@@ -182,8 +187,8 @@ int SudokuGrid::min_possible_values() {
         for(auto i : unsolved) {
             // i is an index
             int count = grid.at(i).possible_values().size();
-            if (count < grid.at(curr_min_index).possible_values().size() && 
-                grid.at(curr_min_index).possible_values().size() > 1) {
+
+            if (count < grid.at(curr_min_index).possible_values().size()) {
                 curr_min_index = i;
             }
         }
@@ -237,8 +242,18 @@ void SudokuGrid::solve() {
                               parent_node.size,
                               parent_node.unsolved,
                               parent_node.grid);
-        
+
         int unsolved_index = child_node.min_possible_values();
+        // REDUCE ALL SINGLETONS IN THIS INSTANCE
+        while (child_node.grid.at(unsolved_index).is_singleton()) {
+            int cell_value = child_node.grid.at(unsolved_index).possible_values().at(0);
+            // cout << "\nIsolating " << cell_value << " at " << unsolved_index << endl;
+            child_node.grid.at(unsolved_index).isolate(cell_value);
+            child_node.reduce(unsolved_index, cell_value);
+            
+            child_node = expanded_node(child_node, unsolved_index);
+            unsolved_index = child_node.min_possible_values();
+        }
         
         // BRANCHING FACTOR
         for(auto cell_value : child_node.grid.at(unsolved_index).possible_values()) {
@@ -247,10 +262,10 @@ void SudokuGrid::solve() {
             child_node.grid.at(unsolved_index).isolate(cell_value);
             child_node.reduce(unsolved_index, cell_value);
             
-            cout << "\nBranching...\n";
-            cout << "Modifying index " << unsolved_index << " (" << unsolved_index % (size - 1) << "," << unsolved_index / (size - 1) << ")\n";
-            cout << "Appending value: " << cell_value << endl;
-            diff_and_print_grid(parent_node, child_node);
+            // cout << "\nBranching...\n";
+            // cout << "Modifying index " << unsolved_index << " (" << unsolved_index % (size - 1) << "," << unsolved_index / (size - 1) << ")\n";
+            // cout << "Appending value: " << cell_value << endl;
+            // diff_and_print_grid(parent_node, child_node);
             
             if(check(child_node, expanded)) {
                 fringe.push(expanded_node(child_node, unsolved_index));

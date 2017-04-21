@@ -10,6 +10,9 @@ all: $(SOURCES) $(EXECUTABLE)
 	
 debug: CFLAGS += -DDEBUG -g
 debug: $(EXECUTABLE)
+
+verbose: CFLAGS += -DVERBOSE_BRANCHING
+verbose: $(EXECUTABLE)
     
 $(EXECUTABLE): $(OBJECTS) copy
 	mkdir -p $(BUILD_DIR)

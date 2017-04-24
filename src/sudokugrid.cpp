@@ -212,19 +212,18 @@ void SudokuGrid::compute_key_value() {
     }
 }
 
+struct PossibleValueCmp {
+    bool operator()(const vector<int>& lhs, const vector<int>& rhs) const {
+        return lhs < rhs;
+        // return lhs.possible_values_by_row < rhs.possible_values_by_row;
+    }
+};
+
 void SudokuGrid::solve() {
-    auto cmp = [](SudokuGrid lhs, SudokuGrid rhs) {
-        return lhs.possible_values_by_row > rhs.possible_values_by_row;
-    };
-    
-    auto check = [](SudokuGrid child, queue<SudokuGrid> expanded) {
-        SudokuGrid temp(child.grid);
-        while(!expanded.empty()) {
-            temp = expanded.front();
-            expanded.pop();
-            if(temp == child) return false;
-        }
-        return true;
+    auto check = [](SudokuGrid child, map<vector<int>, SudokuGrid, PossibleValueCmp> expanded) {
+        auto search = expanded.find(child.possible_values_by_row);
+        if (search == expanded.end()) return true;
+        else return false;
     };
     
     auto expanded_node = [](SudokuGrid child, int unsolved_index) {
@@ -235,11 +234,12 @@ void SudokuGrid::solve() {
     };
     
     // map<vector<int>, int> fringe;
-    // map<vector<int>, int> expanded;
+    map<vector<int>, SudokuGrid, PossibleValueCmp> expanded;
     queue<SudokuGrid> fringe;
-    queue<SudokuGrid> expanded;
+    // queue<SudokuGrid> expanded;
     
     SudokuGrid parent_node(0, 0, size, unsolved, grid);
+    parent_node.compute_key_value();
     fringe.push(parent_node);
     
     int max_queued_nodes = 0;
@@ -299,11 +299,11 @@ void SudokuGrid::solve() {
             cout << "Appending value: " << cell_value << endl;
             diff_and_print_grid(parent_node, child_node);
             #endif
+            
             child_node.compute_key_value();
             if(check(child_node, expanded)) {
-                
                 fringe.push(expanded_node(child_node, unsolved_index));
-                expanded.push(expanded_node(child_node, unsolved_index));
+                expanded.emplace(child_node.possible_values_by_row, expanded_node(child_node, unsolved_index));
             }
         }
         

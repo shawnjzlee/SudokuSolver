@@ -9,6 +9,7 @@
 #include <ctime>
 #include <queue>
 #include <map>
+#include <set>
 
 #include "sudokugrid.h"
 
@@ -21,7 +22,6 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
     // i'm a parent!
     node_status.depth = 0;
     node_status.path_cost = 0;
-    possible_values_by_row.resize(size);
     
     ifstream infile(file);
     if(infile.fail()) exit_from_error(1);
@@ -80,7 +80,6 @@ SudokuGrid::SudokuGrid(const int depth, const int path_cost, const int size, con
     this->node_status.path_cost = path_cost;
     this->unsolved = unsolved;
     this->grid = grid;
-    this->possible_values_by_row.resize(size);
 }
 
 SudokuGrid::~SudokuGrid() { } 
@@ -193,35 +192,25 @@ int SudokuGrid::min_possible_values() {
     }
 }
 
-void SudokuGrid::compute_key_value() {
-    int key(0), row(0), col(0);
-    for(auto cell : grid) {
-        int cell_value(0), decimal(1);
-        for(auto &value : cell.possible_values()) {
-            cell_value += value * decimal;
-            decimal *= 10;
-        }
-        key += cell_value;
-        
-        if(col == 8) {
-            possible_values_by_row.at(row) = key;
-            col = key = 0;
-            row++;
-        }
-        else col++;
-    }
+string SudokuGrid::compute_key_value() const {
+    string bitstring;
+    for(auto cell : grid) bitstring.append(cell.value.to_string());
+    return bitstring;
 }
 
 struct PossibleValueCmp {
-    bool operator()(const vector<int>& lhs, const vector<int>& rhs) const {
-        return lhs < rhs;
-        // return lhs.possible_values_by_row < rhs.possible_values_by_row;
+    // bool operator< , bool operator=
+    bool operator()(const SudokuGrid& lhs, const SudokuGrid& rhs) const {
+        string left = lhs.compute_key_value();
+        string right = rhs.compute_key_value();
+        return left < right;
     }
 };
 
 void SudokuGrid::solve() {
-    auto check = [](SudokuGrid child, map<vector<int>, SudokuGrid, PossibleValueCmp> expanded) {
-        auto search = expanded.find(child.possible_values_by_row);
+    auto check = [](SudokuGrid child, set<SudokuGrid, PossibleValueCmp> expanded) {
+        string key = child.compute_key_value();
+        auto search = expanded.find(child);
         if (search == expanded.end()) return true;
         else return false;
     };
@@ -234,7 +223,7 @@ void SudokuGrid::solve() {
     };
     
     // map<vector<int>, int> fringe;
-    map<vector<int>, SudokuGrid, PossibleValueCmp> expanded;
+    set<SudokuGrid, PossibleValueCmp> expanded;
     queue<SudokuGrid> fringe;
     // queue<SudokuGrid> expanded;
     
@@ -303,7 +292,7 @@ void SudokuGrid::solve() {
             child_node.compute_key_value();
             if(check(child_node, expanded)) {
                 fringe.push(expanded_node(child_node, unsolved_index));
-                expanded.emplace(child_node.possible_values_by_row, expanded_node(child_node, unsolved_index));
+                expanded.emplace(expanded_node(child_node, unsolved_index));
             }
         }
         

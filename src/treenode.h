@@ -12,8 +12,6 @@ class TreeNode {
             int path_cost;
         }; node_status node_status;
         
-        vector<int> possible_values_by_row;
-        
         virtual vector<Point> get_node_state() const = 0;
         virtual void node_expansion() = 0;
 };

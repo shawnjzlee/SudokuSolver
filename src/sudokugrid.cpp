@@ -2,11 +2,13 @@
 #include <bitset>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <queue>
+#include <map>
 
 #include "sudokugrid.h"
 
@@ -19,6 +21,7 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
     // i'm a parent!
     node_status.depth = 0;
     node_status.path_cost = 0;
+    possible_values_by_row.resize(size);
     
     ifstream infile(file);
     if(infile.fail()) exit_from_error(1);
@@ -41,7 +44,7 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
             if (row == size || col == size) break;
             cell_value = (int)next - (int)'0';
             
-            grid.at(index(row, col)).value.resize(size, true);
+            grid.at(index(row, col)).value.set();
             
             if (cell_value == 0) {
                 unsolved.push_back(index(row, col));
@@ -77,6 +80,7 @@ SudokuGrid::SudokuGrid(const int depth, const int path_cost, const int size, con
     this->node_status.path_cost = path_cost;
     this->unsolved = unsolved;
     this->grid = grid;
+    this->possible_values_by_row.resize(size);
 }
 
 SudokuGrid::~SudokuGrid() { } 
@@ -189,7 +193,30 @@ int SudokuGrid::min_possible_values() {
     }
 }
 
+void SudokuGrid::compute_key_value() {
+    int key(0), row(0), col(0);
+    for(auto cell : grid) {
+        int cell_value(0), decimal(1);
+        for(auto &value : cell.possible_values()) {
+            cell_value += value * decimal;
+            decimal *= 10;
+        }
+        key += cell_value;
+        
+        if(col == 8) {
+            possible_values_by_row.at(row) = key;
+            col = key = 0;
+            row++;
+        }
+        else col++;
+    }
+}
+
 void SudokuGrid::solve() {
+    auto cmp = [](SudokuGrid lhs, SudokuGrid rhs) {
+        return lhs.possible_values_by_row > rhs.possible_values_by_row;
+    };
+    
     auto check = [](SudokuGrid child, queue<SudokuGrid> expanded) {
         SudokuGrid temp(child.grid);
         while(!expanded.empty()) {
@@ -207,6 +234,8 @@ void SudokuGrid::solve() {
         return child;
     };
     
+    // map<vector<int>, int> fringe;
+    // map<vector<int>, int> expanded;
     queue<SudokuGrid> fringe;
     queue<SudokuGrid> expanded;
     
@@ -241,7 +270,6 @@ void SudokuGrid::solve() {
             // cout << "\nIsolating " << cell_value << " at " << unsolved_index << endl;
             child_node.grid.at(unsolved_index).isolate(cell_value);
             child_node.reduce(unsolved_index, cell_value);
-            
             child_node = expanded_node(child_node, unsolved_index);
             if(child_node.unsolved.empty()) break;
             // cout << "Exited expanded_node: " << child_node.unsolved.size() << endl;
@@ -271,8 +299,9 @@ void SudokuGrid::solve() {
             cout << "Appending value: " << cell_value << endl;
             diff_and_print_grid(parent_node, child_node);
             #endif
-            
+            child_node.compute_key_value();
             if(check(child_node, expanded)) {
+                
                 fringe.push(expanded_node(child_node, unsolved_index));
                 expanded.push(expanded_node(child_node, unsolved_index));
             }
@@ -315,7 +344,6 @@ void SudokuGrid::diff_and_print_grid(SudokuGrid parent_node, SudokuGrid child_no
     }
     cout << endl;
 }
-
 
 void SudokuGrid::print_grid() {
     for(int i(0); i < grid.size(); i++) {

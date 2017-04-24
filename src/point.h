@@ -1,12 +1,15 @@
 #ifndef POINT_H
 #define POINT_H
 
+#include <bitset>
 #include <vector>
 
 using namespace std;
 
+typedef bitset<9> bset;
+
 struct Point {
-    vector<bool> value;
+    bset value;
     bool isolated;
     
     Point();
@@ -15,6 +18,7 @@ struct Point {
     bool operator==(const Point&) const;
     
     bool is_singleton();
+    int bin_to_int();
     void reduce(const int);
     void reduce_all_except(const int);
     void isolate(const int);

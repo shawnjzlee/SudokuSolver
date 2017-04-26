@@ -26,7 +26,7 @@ class SudokuGrid : public TreeNode {
         
         void reduce(const int, const int);
         bool valid_reduction(const int, const int);
-        string compute_key_value() const;
+        string get_unique_key() const;
         
         void solve();
         void exit_from_error(const int);

@@ -11,7 +11,7 @@ all: $(SOURCES) $(EXECUTABLE)
 debug: CFLAGS += -DDEBUG -g
 debug: $(EXECUTABLE)
 
-verbose: CFLAGS += -DVERBOSE_BRANCHING
+verbose: CFLAGS += -DVERBOSE
 verbose: $(EXECUTABLE)
     
 $(EXECUTABLE): $(OBJECTS) copy

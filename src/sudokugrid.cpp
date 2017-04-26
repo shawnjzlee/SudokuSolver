@@ -99,13 +99,11 @@ int SudokuGrid::index(const int row, const int col) {
 }
 
 void SudokuGrid::reduce(const int index, const int cell_value) {
-    // check row & col
     int traversed(0), row((index / size) * size), col(index % size);
     for(; traversed < size; row++, col+=size, traversed++) {
         grid.at(row).reduce(cell_value);
         grid.at(col).reduce(cell_value);
     }
-    // check each subgrid
     int row_left_bound(0), row_right_bound(0), col_left_bound(0), col_right_bound(0);
     if((index / size) < sqrt(size)) row_right_bound = sqrt(size);
     else if((index / size) < (2* sqrt(size))) {
@@ -139,12 +137,24 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
     // check row & column
     int traversed(0), row((index / size) * size), col(index % size);
     for(; traversed < size; row++, col+=size, traversed++) {
-        if(grid.at(row).is_singleton())
-            if(grid.at(row).possible_values().at(0) == cell_value) 
+        if(grid.at(row).is_singleton()) {
+            if(grid.at(row).possible_values().at(0) == cell_value) {
+                #ifdef VERBOSE
+                cout << "\033[2;33mwarning (row check): \033[0mcell value " << cell_value 
+                     << " invalid at index " << index << endl;
+                #endif
                 return false;
-        if(grid.at(col).is_singleton())
-            if(grid.at(col).possible_values().at(0) == cell_value) 
+            }
+        }
+        if(grid.at(col).is_singleton()) {
+            if(grid.at(col).possible_values().at(0) == cell_value) {
+                #ifdef VERBOSE
+                cout << "\033[2;33mwarning (col check): \033[0mcell value " << cell_value 
+                     << " invalid at index " << index << endl;
+                #endif
                 return false;
+            }
+        }
     }
     // check each subgrid
     int row_left_bound(0), row_right_bound(0), col_left_bound(0), col_right_bound(0);
@@ -169,9 +179,15 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
     }
     for(int i = row_left_bound; i < row_right_bound; i++) {
         for(int j = col_left_bound; j < col_right_bound; j++) {
-            if(grid.at(i * size + j).is_singleton())
-                if(grid.at(i * size + j).possible_values().at(0) == cell_value)
+            if(grid.at(i * size + j).is_singleton()) {
+                if(grid.at(i * size + j).possible_values().at(0) == cell_value) {
+                    #ifdef VERBOSE
+                    cout << "\033[2;33mwarning (subgrid check): \033[0mcell value " << cell_value 
+                         << " invalid at index " << index << endl;
+                    #endif
                     return false;
+                }
+            }
         }
     }
     return true;
@@ -179,20 +195,40 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
 
 int SudokuGrid::min_possible_values() {
     if(unsolved.size() == 0) exit_from_error(5);
-    else if(unsolved.size() == 1) return unsolved.front();
+    else if(unsolved.size() == 1) {
+        #ifdef VERBOSE
+        cout << "\033[2;33mcheck: \033[0mfound one unsolved cell at " << unsolved.front() << endl;
+        #endif
+        return unsolved.front();
+    }
     else {
         int curr_min_index(unsolved.front());
-        for(auto i : unsolved) {
-            // i is an index
-            int count = grid.at(i).possible_values().size();
-            if (count < grid.at(curr_min_index).possible_values().size())
+        #ifdef VERBOSE
+        cout << "The front of unsolved contains index " << unsolved.front() << endl;
+        #endif
+        // for(auto i : unsolved) {
+        //     // i is an index
+        //     int count = grid.at(i).possible_values().size();
+        //     if ((count < grid.at(curr_min_index).possible_values().size()) && 
+        //         (grid.at(curr_min_index).possible_values().size() != 1) && !grid.at(curr_min_index).isolated)
+        //         curr_min_index = i;
+        // }
+        for(int i = 0; i < unsolved.size(); i++) {
+            if(grid.at(curr_min_index).possible_values().size() < grid.at(i).possible_values().size()) {
                 curr_min_index = i;
+            }
         }
+        #ifdef VERBOSE
+        cout << "\033[2;33mcheck: \033[0mreturning unsolved cell of index " << curr_min_index << endl;
+        cout << "Contains " << grid.at(curr_min_index).possible_values().size() << " possible values ";
+        for(auto i : grid.at(curr_min_index).possible_values()) cout << i << " "; cout << endl;
+        #endif
+        
         return curr_min_index;
     }
 }
 
-string SudokuGrid::compute_key_value() const {
+string SudokuGrid::get_unique_key() const {
     string bitstring;
     for(auto cell : grid) bitstring.append(cell.value.to_string());
     return bitstring;
@@ -201,18 +237,23 @@ string SudokuGrid::compute_key_value() const {
 struct PossibleValueCmp {
     // bool operator< , bool operator=
     bool operator()(const SudokuGrid& lhs, const SudokuGrid& rhs) const {
-        string left = lhs.compute_key_value();
-        string right = rhs.compute_key_value();
+        string left = lhs.get_unique_key();
+        string right = rhs.get_unique_key();
         return left < right;
     }
 };
 
 void SudokuGrid::solve() {
     auto check = [](SudokuGrid child, set<SudokuGrid, PossibleValueCmp> expanded) {
-        string key = child.compute_key_value();
+        string key = child.get_unique_key();
         auto search = expanded.find(child);
         if (search == expanded.end()) return true;
-        else return false;
+        else {
+            #ifdef VERBOSE
+            cout << "\033[2;33mwarning: \033[0mduplicate grid found\n";
+            #endif
+            return false;
+        }
     };
     
     auto expanded_node = [](SudokuGrid child, int unsolved_index) {
@@ -228,7 +269,7 @@ void SudokuGrid::solve() {
     // queue<SudokuGrid> expanded;
     
     SudokuGrid parent_node(0, 0, size, unsolved, grid);
-    parent_node.compute_key_value();
+    parent_node.get_unique_key();
     fringe.push(parent_node);
     
     int max_queued_nodes = 0;
@@ -242,6 +283,7 @@ void SudokuGrid::solve() {
         if(parent_node.unsolved.empty()) {
             cout << "\n\nSolution found:\n";
             parent_node.print_grid();
+            cout << "States expanded: " << expanded.size();
             cout << "Depth: " << parent_node.node_status.depth;
             return;
         }
@@ -252,10 +294,22 @@ void SudokuGrid::solve() {
                               parent_node.unsolved,
                               parent_node.grid);
 
+        bool invalid_singleton = false;
         int unsolved_index = child_node.min_possible_values();
         // REDUCE ALL SINGLETONS IN THIS INSTANCE
         while (child_node.grid.at(unsolved_index).is_singleton()) {
             int cell_value = child_node.grid.at(unsolved_index).possible_values().at(0);
+            
+            if(!valid_reduction(unsolved_index, cell_value)) {
+                #ifdef VERBOSE
+                cout << "In singleton reduction ";
+                diff_and_print_grid(parent_node, child_node);
+                #endif
+                expanded.emplace(expanded_node(child_node, unsolved_index));
+                invalid_singleton = true;
+                break;
+            }
+            
             // cout << "\nIsolating " << cell_value << " at " << unsolved_index << endl;
             child_node.grid.at(unsolved_index).isolate(cell_value);
             child_node.reduce(unsolved_index, cell_value);
@@ -265,6 +319,7 @@ void SudokuGrid::solve() {
             unsolved_index = child_node.min_possible_values();
         }
         
+        if(invalid_singleton) continue;
         if(child_node.unsolved.empty()) {
             cout << "\n\nSolution found:\n";
             child_node.print_grid();
@@ -276,10 +331,19 @@ void SudokuGrid::solve() {
         for(auto cell_value : child_node.grid.at(unsolved_index).possible_values()) {
             child_node.grid = parent_node.grid;
             
+            if(!valid_reduction(unsolved_index, cell_value)) {
+                #ifdef VERBOSE
+                cout << "In branching ";
+                diff_and_print_grid(parent_node, child_node);
+                #endif
+                expanded.emplace(expanded_node(child_node, unsolved_index));
+                continue;
+            }
+            
             child_node.grid.at(unsolved_index).isolate(cell_value);
             child_node.reduce(unsolved_index, cell_value);
             
-            #ifdef VERBOSE_BRANCHING
+            #ifdef VERBOSE
             cout << "\nBranching...\n";
             // cout << "Expanded queue size: " << expanded.size() << endl;
             // cout << "Fringe queue size: " << fringe.size() << endl;
@@ -289,7 +353,7 @@ void SudokuGrid::solve() {
             diff_and_print_grid(parent_node, child_node);
             #endif
             
-            child_node.compute_key_value();
+            child_node.get_unique_key();
             if(check(child_node, expanded)) {
                 fringe.push(expanded_node(child_node, unsolved_index));
                 expanded.emplace(expanded_node(child_node, unsolved_index));

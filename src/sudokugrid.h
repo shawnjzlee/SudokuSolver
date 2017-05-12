@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include "point.h"
 #include "treenode.h"
 
@@ -13,7 +14,7 @@ class SudokuGrid : public TreeNode {
         SudokuGrid();
         SudokuGrid(const vector<Point>);
         SudokuGrid(const int, const string);
-        SudokuGrid(const int, const int, const int, const vector<int>, const vector<Point>);
+        SudokuGrid(const int, const int, const int, const set<int>, const vector<Point>);
         ~SudokuGrid();
         
         vector<Point> get_node_state() const;
@@ -35,7 +36,7 @@ class SudokuGrid : public TreeNode {
         
     private:
         int size;
-        vector<int> unsolved;
+        set<int> unsolved;
         vector<Point> grid;
 };
 

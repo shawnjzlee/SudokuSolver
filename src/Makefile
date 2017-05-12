@@ -34,3 +34,6 @@ restart:
 	
 restart_d:
 	cd .. && make debug && cd bin/ && gdb --args ./sudoku_solver -s 9 -f ${ARG}
+	
+restart_v:
+	cd .. && make verbose && cd bin/ && gdb --args ./sudoku_solver -s 9 -f ${ARG}

@@ -188,6 +188,43 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
     return true;
 }
 
+bool SudokuGrid::valid_grid() const {
+    // check row & column
+    int traversed(0), row(0), col(0);
+    vector<int> row_values, col_values;
+    for(; traversed < grid.size(); row++, col+=size, traversed++) {
+        if(grid.at(row).is_singleton())
+            row_values.push_back(grid.at(row).possible_values().at(0));
+        if(grid.at(col).is_singleton())
+            col_values.push_back(grid.at(col).possible_values().at(0));
+            
+        if(traversed+1 % size == 0) {
+            sort(row_values.begin(), row_values.end());
+            sort(col_values.begin(), col_values.end());
+            if(!(unique(row_values.begin(), row_values.end()) == row_values.end()) || 
+               !(unique(col_values.begin(), col_values.end()) == col_values.end()))
+                    return false;
+            row_values.clear();
+            col_values.clear();
+        }
+    }
+    // check each subgrid
+    vector<int> subgrid;
+    for(int i = 0; i < sqrt(size); i++) {
+        for(int j = 0; j < sqrt(size); j++) {
+            if(grid.at(i * size + j).is_singleton()) {
+                subgrid.push_back(grid.at(i * size + j).possible_values().at(0));
+            }
+        }
+    }
+    sort(subgrid.begin(), subgrid.end());
+    if(!(unique(subgrid.begin(), subgrid.end()) == subgrid.end()))
+        return false;
+    subgrid.clear();
+    
+    return true;
+}
+
 int SudokuGrid::min_possible_values() {
     if(unsolved.size() == 0) exit_from_error(5);
     else if(unsolved.size() == 1) {

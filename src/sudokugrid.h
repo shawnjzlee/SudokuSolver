@@ -26,6 +26,7 @@ class SudokuGrid : public TreeNode {
         int min_possible_values();
         
         void reduce(const int, const int);
+        bool valid_grid();
         bool valid_reduction(const int, const int);
         string get_unique_key() const;
         

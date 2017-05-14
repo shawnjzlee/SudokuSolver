@@ -61,6 +61,8 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
     cout << "Grid initialized:\n";
     print_grid();
     
+    valid_grid();
+    
     for(int index = 0; index < grid.size(); index++)
         if(grid.at(index).is_singleton())
             reduce(index, grid.at(index).possible_values().at(0));
@@ -188,40 +190,46 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
     return true;
 }
 
-bool SudokuGrid::valid_grid() const {
+bool SudokuGrid::valid_grid() {
     // check row & column
-    int traversed(0), row(0), col(0);
     vector<int> row_values, col_values;
-    for(; traversed < grid.size(); row++, col+=size, traversed++) {
-        if(grid.at(row).is_singleton())
-            row_values.push_back(grid.at(row).possible_values().at(0));
-        if(grid.at(col).is_singleton())
-            col_values.push_back(grid.at(col).possible_values().at(0));
-            
-        if(traversed+1 % size == 0) {
-            sort(row_values.begin(), row_values.end());
-            sort(col_values.begin(), col_values.end());
-            if(!(unique(row_values.begin(), row_values.end()) == row_values.end()) || 
-               !(unique(col_values.begin(), col_values.end()) == col_values.end()))
-                    return false;
-            row_values.clear();
-            col_values.clear();
+    for(int i = 0; i < grid.size(); i+=size) {
+        for(int j = 0; j < size; j++) {
+            row_values.push_back(i + j);
         }
+        sort(row_values.begin(), row_values.end());
+        if(!(unique(row_values.begin(), row_values.end()) == row_values.end())) return false;
+        row_values.clear();
+    }
+    for(int i = 0; i < size; i++) {
+        for(int j = 0; j < grid.size(); j+=size) {
+            col_values.push_back(i + j);
+        }
+        sort(col_values.begin(), col_values.end());
+        if(!(unique(col_values.begin(), col_values.end()) == col_values.end())) return false;
+        col_values.clear();
     }
     // check each subgrid
-    vector<int> subgrid;
-    for(int i = 0; i < sqrt(size); i++) {
-        for(int j = 0; j < sqrt(size); j++) {
-            if(grid.at(i * size + j).is_singleton()) {
-                subgrid.push_back(grid.at(i * size + j).possible_values().at(0));
+    vector<int> subgrid1, subgrid2, subgrid3;
+    for(int offset = 0; offset < size; offset+=3) {
+        for(int i = 0; i < sqrt(size); i++) {
+            for(int j = 0; j < sqrt(size); j++) {
+                if(grid.at(offset * size + j).is_singleton()) {
+                    subgrid1.push_back(grid.at((i + offset) * size + j).possible_values().at(0));
+                    subgrid2.push_back(grid.at((i + offset) * size + (j + 3)).possible_values().at(0));
+                    subgrid3.push_back(grid.at((i + offset) * size + (j + 6)).possible_values().at(0));
+                }
             }
         }
+        sort(subgrid1.begin(), subgrid1.end());
+        sort(subgrid2.begin(), subgrid2.end());
+        sort(subgrid3.begin(), subgrid3.end());
+        if(!(unique(subgrid1.begin(), subgrid1.end()) == subgrid1.end()) ||
+           !(unique(subgrid2.begin(), subgrid2.end()) == subgrid2.end()) ||
+           !(unique(subgrid3.begin(), subgrid3.end()) == subgrid3.end()))
+            return false;
+        subgrid1.clear(); subgrid2.clear(); subgrid3.clear();
     }
-    sort(subgrid.begin(), subgrid.end());
-    if(!(unique(subgrid.begin(), subgrid.end()) == subgrid.end()))
-        return false;
-    subgrid.clear();
-    
     return true;
 }
 

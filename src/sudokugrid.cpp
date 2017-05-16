@@ -309,6 +309,7 @@ string SudokuGrid::get_unique_key() const {
 }
 
 void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
+    cout << "Thread " << this_thread::get_id() << " has spawned...\n";
     auto check = [](SudokuGrid child, set<SudokuGrid, PossibleValueCmp> expanded) {
         string key = child.get_unique_key();
         {
@@ -346,6 +347,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         #endif
         
         if(parent_node.unsolved.empty()) {
+            g_solution_found = true;
             cout << "\n\nSolution found:\n";
             {
                 lock_guard<mutex> lock(mutex_print_grid);
@@ -409,6 +411,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         
         if(invalid_singleton) continue;
         if(child_node.unsolved.empty()) {
+            g_solution_found = true;
             cout << "\n\nSolution found:\n";
             {
                 lock_guard<mutex> lock(mutex_print_grid);
@@ -459,7 +462,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         if(fringe.size() > max_queued_nodes)
             max_queued_nodes = fringe.size();
     }
-    exit_from_error(6);
+    // exit_from_error(6);
 }
 
 void SudokuGrid::thread_distribution(int num_threads) {
@@ -486,14 +489,25 @@ void SudokuGrid::thread_distribution(int num_threads) {
         cout << "\033[2;33mwarning:\033[0m too many threads requested. Spawning "
              << thread::hardware_concurrency() << " threads.\n";
     }
+    else cout << "Spawning " << num_threads << " threads.\n";
     
-    vector<thread> threads(num_threads);
-    for(int tid(0); tid < num_threads; tid++) {
+    vector<thread> threads;
+    while(!g_solution_found) {
         if(possible_values.empty()) {
             dist = fetch(parent_node);
             unsolved_index = dist.first;
             possible_values = dist.second;
         }        
+        while(threads.size() > num_threads) {
+            // join threads that finished work, but solution is not found
+            for(auto i = threads.begin(); i < threads.end(); i++) {
+                if(i->joinable()) {
+                    cout << "Thread " << i->get_id() << " has returned and joined...\n";
+                    i->join();
+                    threads.erase(i);
+                }
+            }
+        }
         
         int cell_value = possible_values.front();
         possible_values.pop_front();
@@ -513,8 +527,7 @@ void SudokuGrid::thread_distribution(int num_threads) {
         cout << "\n";
         // #endif
         
-        cout << "Thread " << tid << " has spawned...\n\n";
-        threads[tid] = thread(&SudokuGrid::solve, this, ref(expanded));
+        threads.push_back(thread(&SudokuGrid::solve, this, ref(expanded)));
     }
     
     for_each(threads.begin(), threads.end(), mem_fn(&thread::join));

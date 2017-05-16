@@ -40,3 +40,9 @@ restart_v:
 	
 restart_t:
 	cd .. && make && cd bin/ && ./sudoku_solver -s 9 -f ${ARG1} -t ${ARG2}
+	
+restart_tv:
+	cd .. && make verbose && cd bin/ && ./sudoku_solver -s 9 -f ${ARG1} -t ${ARG2}
+	
+restart_td:
+	cd .. && make debug && cd bin/ && gdb --args ./sudoku_solver -s 9 -f ${ARG1} -t ${ARG2}

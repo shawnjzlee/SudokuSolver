@@ -7,8 +7,10 @@
 #include <cstdlib>
 #include <utility>
 #include <queue>
-#include <map>
+#include <deque>
 #include <set>
+#include <thread>
+#include <mutex>
 
 #include "sudokugrid.h"
 
@@ -213,7 +215,6 @@ bool SudokuGrid::valid_grid() {
         if(!(unique(col_values.begin(), col_values.end()) == col_values.end())) return false;
         col_values.clear();
     }
-    cout << endl;
     // check each subgrid
     vector<int> subgrid1, subgrid2, subgrid3;
     for(int offset = 0; offset < size; offset+=3) {
@@ -282,22 +283,31 @@ int SudokuGrid::min_possible_values() {
     }
 }
 
+int SudokuGrid::max_possible_values() {
+    if(unsolved.size() == 0) exit_from_error(5);
+    else if(unsolved.size() == 1) {
+        return *unsolved.begin();
+    }
+    else {
+        vector<int> cardinality_possible_values, key;
+        for(const auto &i : unsolved) {
+            cardinality_possible_values.push_back(grid.at(i).possible_values().size());
+            key.push_back(i);
+        }
+        auto result = max_element(cardinality_possible_values.begin(), cardinality_possible_values.end());
+        int key_value = key.at(distance(cardinality_possible_values.begin(), result));
+        
+        return key_value;
+    }
+}
+
 string SudokuGrid::get_unique_key() const {
     string bitstring;
     for(auto cell : grid) bitstring.append(cell.value.to_string());
     return bitstring;
 }
 
-struct PossibleValueCmp {
-    // bool operator< , bool operator=
-    bool operator()(const SudokuGrid& lhs, const SudokuGrid& rhs) const {
-        string left = lhs.get_unique_key();
-        string right = rhs.get_unique_key();
-        return left < right;
-    }
-};
-
-void SudokuGrid::solve() {
+void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
     auto check = [](SudokuGrid child, set<SudokuGrid, PossibleValueCmp> expanded) {
         string key = child.get_unique_key();
         auto search = expanded.find(child);
@@ -311,16 +321,11 @@ void SudokuGrid::solve() {
     };
     
     auto expanded_node = [](SudokuGrid child, int unsolved_index) {
-        // cout << "Entering expanded: " << child.unsolved.size() << endl;
         child.unsolved.erase(find(child.unsolved.begin(), child.unsolved.end(), unsolved_index));
-        // cout << "Erased: " << child.unsolved.size() << endl;
         return child;
     };
     
-    // map<vector<int>, int> fringe;
-    set<SudokuGrid, PossibleValueCmp> expanded;
     queue<SudokuGrid> fringe;
-    // queue<SudokuGrid> expanded;
     
     SudokuGrid parent_node(0, 0, size, unsolved, grid);
     parent_node.get_unique_key();
@@ -356,16 +361,6 @@ void SudokuGrid::solve() {
         while (child_node.grid.at(unsolved_index).is_singleton()) {
             vector<Point> prev = child_node.grid;
             int cell_value = child_node.grid.at(unsolved_index).possible_values().at(0);
-            
-            // if(!valid_reduction(unsolved_index, cell_value)) {
-            //     #ifdef VERBOSE
-            //     cout << "Invalid singleton reduction with value " << cell_value << " at " << unsolved_index;
-            //     diff_and_print_grid(parent_node, child_node);
-            //     #endif
-            //     expanded.emplace(expanded_node(child_node, unsolved_index));
-            //     invalid_singleton = true;
-            //     break;
-            // }
             
             #ifdef VERBOSE
             cout << "\nIsolating " << cell_value << " at " << unsolved_index << endl;
@@ -406,7 +401,8 @@ void SudokuGrid::solve() {
         if(child_node.unsolved.empty()) {
             cout << "\n\nSolution found:\n";
             child_node.print_grid();
-            cout << "Depth: " << parent_node.node_status.depth;
+            cout << "\nStates expanded: " << expanded.size();
+            cout << "\nDepth: " << parent_node.node_status.depth << endl;
             return;
         }
         
@@ -449,6 +445,52 @@ void SudokuGrid::solve() {
     exit_from_error(6);
 }
 
+void SudokuGrid::thread_distribution(const int num_threads) {
+    auto fetch = [](SudokuGrid& node) {
+        int unsolved_index = node.max_possible_values();
+        vector<int> temp = node.grid.at(unsolved_index).possible_values();
+        deque<int> possible_values(temp.begin(), temp.end());
+        node.unsolved.erase(find(node.unsolved.begin(), node.unsolved.end(), unsolved_index));
+        
+        return make_pair(unsolved_index, possible_values);
+    };
+    
+    set<SudokuGrid, PossibleValueCmp> expanded;
+    
+    SudokuGrid parent_node(0, 0, size, unsolved, grid);
+    parent_node.get_unique_key();
+    
+    pair<int, deque<int>> dist = fetch(parent_node);
+    int unsolved_index = dist.first;
+    deque<int> possible_values = dist.second;
+    
+    vector<thread> threads(num_threads);
+    for(int tid(0); tid < num_threads; tid++) {
+        if(possible_values.empty()) {
+            dist = fetch(parent_node);
+            unsolved_index = dist.first;
+            possible_values = dist.second;
+        }        
+        
+        int cell_value = possible_values.front();
+        possible_values.pop_front();
+        
+        parent_node.grid.at(unsolved_index).isolate(cell_value);
+        parent_node.reduce(unsolved_index, cell_value);
+        
+        // #ifdef VERBOSE
+        cout << "Initializing with max_value index " << unsolved_index << endl;
+        cout << "Possible values: ";
+        for(const auto i : possible_values) cout << i << " ";
+        cout << "\n\n";
+        // #endif
+        
+        cout << "Thread " << tid << " has spawned...\n";
+        threads[tid] = thread(&SudokuGrid::solve, this, ref(expanded));
+    }
+    for_each(threads.begin(), threads.end(), mem_fn(&thread::join));
+}
+
 
 void SudokuGrid::exit_from_error(const int ret) {
     switch(ret) {
@@ -456,7 +498,7 @@ void SudokuGrid::exit_from_error(const int ret) {
         case 2: cout << "Grid size cannot be less than 0.\n"; break;
         case 3: cout << "Grid size is not a perfect square.\n"; break;
         case 4: cout << "Incorrect value placement. Please check file.\n"; break;
-        case 5: cout << "Returned no unsolved cells.\n"; print_grid(); break;
+        case 5: cout << "Did not return any unsolved cells.\n"; print_grid(); break;
         case 6: cout << "Fringe is empty.\n"; break;
         default: cout << "Undetermined error.\n"; break;
     }

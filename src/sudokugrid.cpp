@@ -13,6 +13,7 @@
 #include <mutex>
 
 #include "sudokugrid.h"
+#include "global.h"
 
 using namespace std;
 
@@ -310,13 +311,16 @@ string SudokuGrid::get_unique_key() const {
 void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
     auto check = [](SudokuGrid child, set<SudokuGrid, PossibleValueCmp> expanded) {
         string key = child.get_unique_key();
-        auto search = expanded.find(child);
-        if (search == expanded.end()) return true;
-        else {
-            #ifdef VERBOSE
-            cout << "\033[2;33mwarning: \033[0mduplicate grid found\n";
-            #endif
-            return false;
+        {
+            lock_guard<mutex> lock(mutex_expanded_set);
+            auto search = expanded.find(child);
+            if (search == expanded.end()) return true;
+            else {
+                #ifdef VERBOSE
+                cout << "\033[2;33mwarning: \033[0mduplicate grid found\n";
+                #endif
+                return false;
+            }
         }
     };
     
@@ -343,7 +347,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         
         if(parent_node.unsolved.empty()) {
             cout << "\n\nSolution found:\n";
-            parent_node.print_grid();
+            {
+                lock_guard<mutex> lock(mutex_print_grid);
+                parent_node.print_grid();
+            }
             cout << "\nStates expanded: " << expanded.size();
             cout << "\nDepth: " << parent_node.node_status.depth << endl;
             return;
@@ -381,7 +388,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
                 child_node.print_grid();
                 #endif
                 
-                expanded.emplace(child_node);
+                {
+                    lock_guard<mutex> lock(mutex_expanded_set);
+                    expanded.emplace(child_node);
+                }
                 invalid_singleton = true;
                 break;
             }
@@ -400,7 +410,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         if(invalid_singleton) continue;
         if(child_node.unsolved.empty()) {
             cout << "\n\nSolution found:\n";
-            child_node.print_grid();
+            {
+                lock_guard<mutex> lock(mutex_print_grid);
+                child_node.print_grid();
+            }
             cout << "\nStates expanded: " << expanded.size();
             cout << "\nDepth: " << parent_node.node_status.depth << endl;
             return;
@@ -414,7 +427,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
                 cout << "In branching, cell value " << cell_value << " is invalid at " << unsolved_index << endl;
                 diff_and_print_grid(parent_node, child_node);
                 #endif
-                expanded.emplace(expanded_node(child_node, unsolved_index));
+                {
+                    lock_guard<mutex> lock(mutex_expanded_set);
+                    expanded.emplace(expanded_node(child_node, unsolved_index));
+                }
                 continue;
             }
             
@@ -433,6 +449,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
             
             if(check(child_node, expanded)) {
                 fringe.push(expanded_node(child_node, unsolved_index));
+                lock_guard<mutex> lock(mutex_expanded_set);
                 expanded.emplace(expanded_node(child_node, unsolved_index));
             }
             child_node.grid = prev;
@@ -445,7 +462,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
     exit_from_error(6);
 }
 
-void SudokuGrid::thread_distribution(const int num_threads) {
+void SudokuGrid::thread_distribution(int num_threads) {
     auto fetch = [](SudokuGrid& node) {
         int unsolved_index = node.max_possible_values();
         vector<int> temp = node.grid.at(unsolved_index).possible_values();
@@ -464,6 +481,12 @@ void SudokuGrid::thread_distribution(const int num_threads) {
     int unsolved_index = dist.first;
     deque<int> possible_values = dist.second;
     
+    if(num_threads > thread::hardware_concurrency()) {
+        num_threads = thread::hardware_concurrency();
+        cout << "\033[2;33mwarning:\033[0m too many threads requested. Spawning "
+             << thread::hardware_concurrency() << " threads.\n";
+    }
+    
     vector<thread> threads(num_threads);
     for(int tid(0); tid < num_threads; tid++) {
         if(possible_values.empty()) {
@@ -478,16 +501,22 @@ void SudokuGrid::thread_distribution(const int num_threads) {
         parent_node.grid.at(unsolved_index).isolate(cell_value);
         parent_node.reduce(unsolved_index, cell_value);
         
+        {
+            lock_guard<mutex> lock(mutex_expanded_set);
+            expanded.emplace(parent_node);
+        }
+        
         // #ifdef VERBOSE
         cout << "Initializing with max_value index " << unsolved_index << endl;
         cout << "Possible values: ";
         for(const auto i : possible_values) cout << i << " ";
-        cout << "\n\n";
+        cout << "\n";
         // #endif
         
-        cout << "Thread " << tid << " has spawned...\n";
+        cout << "Thread " << tid << " has spawned...\n\n";
         threads[tid] = thread(&SudokuGrid::solve, this, ref(expanded));
     }
+    
     for_each(threads.begin(), threads.end(), mem_fn(&thread::join));
 }
 

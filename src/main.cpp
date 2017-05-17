@@ -1,6 +1,5 @@
 #include <chrono>
 #include <iostream>
-#include <mutex>
 
 #include "cmdline.h"
 #include "sudokugrid.h"

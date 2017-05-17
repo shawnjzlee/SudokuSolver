@@ -28,6 +28,7 @@ clean:
 copy:
 	mkdir -p $(BUILD_DIR)
 	cp -f ./Makefile $(BUILD_DIR)/Makefile
+	cp -f ./benchmark.sh $(BUILD_DIR)/benchmark.sh
 	
 restart:
 	cd .. && make && cd bin/ && ./sudoku_solver -s 9 -f ${ARG}

@@ -11,6 +11,7 @@
 #include <set>
 #include <thread>
 #include <mutex>
+#include <chrono>
 
 #include "sudokugrid.h"
 #include "global.h"
@@ -309,7 +310,9 @@ string SudokuGrid::get_unique_key() const {
 }
 
 void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
+    #ifdef VERBOSE
     cout << "Thread " << this_thread::get_id() << " has spawned...\n";
+    #endif
     auto check = [](SudokuGrid child, set<SudokuGrid, PossibleValueCmp> expanded) {
         string key = child.get_unique_key();
         {
@@ -346,7 +349,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         cout << "Number of unsolved cells: " << parent_node.unsolved.size() << "\n";
         #endif
         
-        if(parent_node.unsolved.empty()) {
+        if(parent_node.unsolved.empty() && !g_solution_found) {
             g_solution_found = true;
             cout << "\n\nSolution found:\n";
             {
@@ -357,6 +360,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
             cout << "\nDepth: " << parent_node.node_status.depth << endl;
             return;
         }
+        else if(g_solution_found) return;
         
         SudokuGrid child_node(parent_node.node_status.depth + 1,
                               parent_node.node_status.path_cost + 1,
@@ -410,7 +414,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         }
         
         if(invalid_singleton) continue;
-        if(child_node.unsolved.empty()) {
+        if(child_node.unsolved.empty() && !g_solution_found) {
             g_solution_found = true;
             cout << "\n\nSolution found:\n";
             {
@@ -421,6 +425,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
             cout << "\nDepth: " << parent_node.node_status.depth << endl;
             return;
         }
+        else if(g_solution_found) return;
         
         // BRANCHING FACTOR
         vector<Point> prev = child_node.grid;
@@ -500,9 +505,12 @@ void SudokuGrid::thread_distribution(int num_threads) {
         }        
         while(threads.size() > num_threads) {
             // join threads that finished work, but solution is not found
+            if(g_solution_found) break;
             for(auto i = threads.begin(); i < threads.end(); i++) {
                 if(i->joinable()) {
+                    #ifdef VERBOSE
                     cout << "Thread " << i->get_id() << " has returned and joined...\n";
+                    #endif
                     i->join();
                     threads.erase(i);
                 }
@@ -520,12 +528,12 @@ void SudokuGrid::thread_distribution(int num_threads) {
             expanded.emplace(parent_node);
         }
         
-        // #ifdef VERBOSE
+        #ifdef VERBOSE
         cout << "Initializing with max_value index " << unsolved_index << endl;
         cout << "Possible values: ";
         for(const auto i : possible_values) cout << i << " ";
         cout << "\n";
-        // #endif
+        #endif
         
         threads.push_back(thread(&SudokuGrid::solve, this, ref(expanded)));
     }

@@ -1,3 +1,4 @@
+#include <cassert>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -21,7 +22,7 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
     // i'm a parent!
     node_status.depth = 0;
     node_status.path_cost = 0;
-    
+
     ifstream infile(file);
     if(infile.fail()) exit_from_error(1);
     if(size < 0) exit_from_error(2);
@@ -33,29 +34,31 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
     char next;
     int row(0), col(0), cell_value(0);
     
-    while(!infile.eof()) {
-        infile.get(next);
-        if(isspace(next)) {
-            col = 0;
-            row++;
-        }
-        else {
-            if (row == size || col == size) break;
-            cell_value = (int)next - (int)'0';
+    for(row=0; row<size; ++row) {
+        for(col=0; col<size; ++col) {
+            infile >> next;
             
+            if(next == '.') {
+                unsolved.emplace(index(row, col));
+                continue;
+            }
+            else if(next >='a' && next <='f') {
+                cell_value = (next -'a') + 11;
+            }
+            else if(next >='0' && next <='9') {
+                cell_value = next - '0' + 1;
+            }
+            else
+                assert(false);  // something went wrong here
+
             grid.at(index(row, col)).value.set();
             
-            if (cell_value == 0) {
-                unsolved.emplace(index(row, col));
-            }
-            else {
-                bool rc = valid_reduction(index(row, col), cell_value);
-                if (!rc) exit_from_error(4);
-                grid.at(index(row, col)).reduce_all_except(cell_value);
-            }
-            col++;
+            bool rc = valid_reduction(index(row, col), cell_value);
+            if (!rc) exit_from_error(4);
+            grid.at(index(row, col)).reduce_all_except(cell_value);
         }
     }
+    
     row = col = 0;
     
     cout << "Grid initialized:\n";
@@ -110,8 +113,12 @@ void SudokuGrid::reduce(const int index, const int cell_value) {
         row_left_bound = sqrt(size);
         row_right_bound = 2 * sqrt(size);
     }
-    else {
+    else if((index/size) < (3* sqrt(size))) {
         row_left_bound = 2 * sqrt(size);
+        row_right_bound = 3 * sqrt(size);
+    }
+    else {
+        row_left_bound = 3 * sqrt(size);
         row_right_bound = size;
     }
     
@@ -120,8 +127,12 @@ void SudokuGrid::reduce(const int index, const int cell_value) {
         col_left_bound = sqrt(size);
         col_right_bound = 2 * sqrt(size);
     }
-    else {
+    else if((index % size) < (3 * sqrt(size))) {
         col_left_bound = 2 * sqrt(size);
+        col_right_bound = 3 * sqrt(size);
+    }
+    else {
+        col_left_bound = 3 * sqrt(size);
         col_right_bound = size;
     }
     for(int i = row_left_bound; i < row_right_bound; i++) {
@@ -159,8 +170,12 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
         row_left_bound = sqrt(size);
         row_right_bound = 2 * sqrt(size);
     }
-    else {
+    else if((index/size) < (3* sqrt(size))) {
         row_left_bound = 2 * sqrt(size);
+        row_right_bound = 3 * sqrt(size);
+    }
+    else {
+        row_left_bound = 3 * sqrt(size);
         row_right_bound = size;
     }
     
@@ -169,8 +184,12 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
         col_left_bound = sqrt(size);
         col_right_bound = 2 * sqrt(size);
     }
-    else {
+    else if((index % size) < (3 * sqrt(size))) {
         col_left_bound = 2 * sqrt(size);
+        col_right_bound = 3 * sqrt(size);
+    }
+    else {
+        col_left_bound = 3 * sqrt(size);
         col_right_bound = size;
     }
     for(int i = row_left_bound; i < row_right_bound; i++) {
@@ -311,16 +330,12 @@ void SudokuGrid::solve() {
     };
     
     auto expanded_node = [](SudokuGrid child, int unsolved_index) {
-        // cout << "Entering expanded: " << child.unsolved.size() << endl;
         child.unsolved.erase(find(child.unsolved.begin(), child.unsolved.end(), unsolved_index));
-        // cout << "Erased: " << child.unsolved.size() << endl;
         return child;
     };
     
-    // map<vector<int>, int> fringe;
     set<SudokuGrid, PossibleValueCmp> expanded;
     queue<SudokuGrid> fringe;
-    // queue<SudokuGrid> expanded;
     
     SudokuGrid parent_node(0, 0, size, unsolved, grid);
     parent_node.get_unique_key();
@@ -356,16 +371,6 @@ void SudokuGrid::solve() {
         while (child_node.grid.at(unsolved_index).is_singleton()) {
             vector<Point> prev = child_node.grid;
             int cell_value = child_node.grid.at(unsolved_index).possible_values().at(0);
-            
-            // if(!valid_reduction(unsolved_index, cell_value)) {
-            //     #ifdef VERBOSE
-            //     cout << "Invalid singleton reduction with value " << cell_value << " at " << unsolved_index;
-            //     diff_and_print_grid(parent_node, child_node);
-            //     #endif
-            //     expanded.emplace(expanded_node(child_node, unsolved_index));
-            //     invalid_singleton = true;
-            //     break;
-            // }
             
             #ifdef VERBOSE
             cout << "\nIsolating " << cell_value << " at " << unsolved_index << endl;

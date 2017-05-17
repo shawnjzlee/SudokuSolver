@@ -6,7 +6,7 @@
 
 using namespace std;
 
-typedef bitset<9> bset;
+typedef bitset<16> bset;
 
 struct Point {
     bset value;

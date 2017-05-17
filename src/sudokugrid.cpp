@@ -17,6 +17,7 @@
 #include "global.h"
 
 using namespace std;
+using namespace std::chrono;
 
 SudokuGrid::SudokuGrid() : size(0) { }
 
@@ -497,6 +498,7 @@ void SudokuGrid::thread_distribution(int num_threads) {
     else cout << "Spawning " << num_threads << " threads.\n";
     
     vector<thread> threads;
+    high_resolution_clock::time_point start = high_resolution_clock::now();
     while(!g_solution_found) {
         if(possible_values.empty()) {
             dist = fetch(parent_node);
@@ -537,8 +539,11 @@ void SudokuGrid::thread_distribution(int num_threads) {
         
         threads.push_back(thread(&SudokuGrid::solve, this, ref(expanded)));
     }
-    
     for_each(threads.begin(), threads.end(), mem_fn(&thread::join));
+    
+    high_resolution_clock::time_point end = high_resolution_clock::now();
+    duration<double> runtime = duration_cast<duration<double>>(end - start);
+    cout << "Time to solve (in secs): " << runtime.count() << endl;
 }
 
 

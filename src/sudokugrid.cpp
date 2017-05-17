@@ -12,6 +12,7 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <cassert>
 
 #include "sudokugrid.h"
 #include "global.h"
@@ -38,29 +39,31 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
     char next;
     int row(0), col(0), cell_value(0);
     
-    while(!infile.eof()) {
-        infile.get(next);
-        if(isspace(next)) {
-            col = 0;
-            row++;
-        }
-        else {
-            if (row == size || col == size) break;
-            cell_value = (int)next - (int)'0';
+    for(row=0; row<size; ++row) {
+        for(col=0; col<size; ++col) {
+            infile >> next;
             
+            if(next == '.') {
+                unsolved.emplace(index(row, col));
+                continue;
+            }
+            else if(next >='a' && next <='f') {
+                cell_value = (next -'a') + 11;
+            }
+            else if(next >='0' && next <='9') {
+                cell_value = next - '0' + 1;
+            }
+            else
+                assert(false);  // something went wrong here
+
             grid.at(index(row, col)).value.set();
             
-            if (cell_value == 0) {
-                unsolved.emplace(index(row, col));
-            }
-            else {
-                bool rc = valid_reduction(index(row, col), cell_value);
-                if (!rc) exit_from_error(4);
-                grid.at(index(row, col)).reduce_all_except(cell_value);
-            }
-            col++;
+            bool rc = valid_reduction(index(row, col), cell_value);
+            if (!rc) exit_from_error(4);
+            grid.at(index(row, col)).reduce_all_except(cell_value);
         }
     }
+    
     row = col = 0;
     
     cout << "Grid initialized:\n";
@@ -164,8 +167,12 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
         row_left_bound = sqrt(size);
         row_right_bound = 2 * sqrt(size);
     }
-    else {
+    else if((index/size) < (3* sqrt(size))) {
         row_left_bound = 2 * sqrt(size);
+        row_right_bound = 3 * sqrt(size);
+    }
+    else {
+        row_left_bound = 3 * sqrt(size);
         row_right_bound = size;
     }
     
@@ -174,8 +181,12 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
         col_left_bound = sqrt(size);
         col_right_bound = 2 * sqrt(size);
     }
-    else {
+    else if((index % size) < (3 * sqrt(size))) {
         col_left_bound = 2 * sqrt(size);
+        col_right_bound = 3 * sqrt(size);
+    }
+    else {
+        col_left_bound = 3 * sqrt(size);
         col_right_bound = size;
     }
     for(int i = row_left_bound; i < row_right_bound; i++) {

@@ -31,19 +31,19 @@ copy:
 	cp -f ./benchmark.sh $(BUILD_DIR)/benchmark.sh
 	
 restart:
-	cd .. && make && cd bin/ && ./sudoku_solver -s 9 -f ${ARG}
+	cd .. && make && cd bin/ && ./sudoku_solver -s 16 -f ${ARG}
 	
 restart_d:
-	cd .. && make debug && cd bin/ && gdb --args ./sudoku_solver -s 9 -f ${ARG}
+	cd .. && make debug && cd bin/ && gdb --args ./sudoku_solver -s 16 -f ${ARG}
 	
 restart_v:
-	cd .. && make verbose && cd bin/ && ./sudoku_solver -s 9 -f ${ARG}
+	cd .. && make verbose && cd bin/ && ./sudoku_solver -s 16 -f ${ARG}
 	
 restart_t:
-	cd .. && make && cd bin/ && ./sudoku_solver -s 9 -f ${ARG1} -t ${ARG2}
+	cd .. && make && cd bin/ && ./sudoku_solver -s 16 -f ${ARG1} -t ${ARG2}
 	
 restart_tv:
-	cd .. && make verbose && cd bin/ && ./sudoku_solver -s 9 -f ${ARG1} -t ${ARG2}
+	cd .. && make verbose && cd bin/ && ./sudoku_solver -s 16 -f ${ARG1} -t ${ARG2}
 	
 restart_td:
-	cd .. && make debug && cd bin/ && gdb --args ./sudoku_solver -s 9 -f ${ARG1} -t ${ARG2}
+	cd .. && make debug && cd bin/ && gdb --args ./sudoku_solver -s 16 -f ${ARG1} -t ${ARG2}

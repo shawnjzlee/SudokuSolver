@@ -23,6 +23,7 @@ struct Point {
     void reduce_all_except(const int);
     void isolate(const int);
     vector<int> possible_values();
+    void print_possible_values();
 };
 
 #endif

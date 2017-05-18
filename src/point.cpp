@@ -41,3 +41,7 @@ vector<int> Point::possible_values() {
     }
     return values;
 }
+
+void Point::print_possible_values() {
+    cout << value.to_string() << endl;
+}

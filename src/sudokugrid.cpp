@@ -40,6 +40,7 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
             
             if(next == '.') {
                 unsolved.emplace(index(row, col));
+                grid.at(index(row, col)).value.set();
                 continue;
             }
             else if(next >='a' && next <='f') {
@@ -59,6 +60,9 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
         }
     }
     
+    for(int index = 0; index < grid.size(); index++)
+        grid.at(index).print_possible_values();
+    
     row = col = 0;
     
     cout << "Grid initialized:\n";
@@ -67,8 +71,13 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
     for(int index = 0; index < grid.size(); index++)
         if(grid.at(index).is_singleton())
             reduce(index, grid.at(index).possible_values().at(0));
+            
+    for(int index = 0; index < grid.size(); index++)
+        grid.at(index).print_possible_values();
     
     infile.close();
+    
+    cout << endl;
 }
 
 SudokuGrid::SudokuGrid(const vector<Point> grid) {
@@ -340,7 +349,7 @@ void SudokuGrid::solve() {
     SudokuGrid parent_node(0, 0, size, unsolved, grid);
     parent_node.get_unique_key();
     fringe.push(parent_node);
-    
+    cout << fringe.size() << endl;
     int max_queued_nodes = 0;
     
     while(!fringe.empty()) {
@@ -407,14 +416,15 @@ void SudokuGrid::solve() {
             unsolved_index = child_node.min_possible_values();
         }
         
-        if(invalid_singleton) continue;
+        if(invalid_singleton) {
+            continue;
+        }
         if(child_node.unsolved.empty()) {
             cout << "\n\nSolution found:\n";
             child_node.print_grid();
             cout << "Depth: " << parent_node.node_status.depth;
             return;
         }
-        
         // BRANCHING FACTOR
         vector<Point> prev = child_node.grid;
         for(auto cell_value : child_node.grid.at(unsolved_index).possible_values()) {

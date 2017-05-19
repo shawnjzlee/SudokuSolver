@@ -3,7 +3,8 @@
 
 #include "cmdline.h"
 #include "sudokugrid.h"
-using namespace std; 
+using namespace std;
+using namespace std::chrono;
 
 #define PATH "../../dataset/"
 

@@ -323,10 +323,17 @@ void SudokuGrid::solve() {
     parent_node.get_unique_key();
     fringe.push(parent_node);
     int max_queued_nodes = 0;
+    
+    #ifdef TEST
     int test = 0;
+    #endif
+    
     while(!fringe.empty()) {
+        #ifdef TEST
         if(test == 100) return;
         else test++;
+        #endif
+        
         parent_node = fringe.front();
         fringe.pop();
         

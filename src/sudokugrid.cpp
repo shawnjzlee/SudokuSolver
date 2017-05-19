@@ -60,8 +60,8 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
         }
     }
     
-    for(int index = 0; index < grid.size(); index++)
-        grid.at(index).print_possible_values();
+    // for(int index = 0; index < grid.size(); index++)
+    //     grid.at(index).print_possible_values();
     
     row = col = 0;
     
@@ -241,53 +241,24 @@ bool SudokuGrid::valid_grid() {
         if(!(unique(col_values.begin(), col_values.end()) == col_values.end())) return false;
         col_values.clear();
     }
-    cout << endl;
     // check each subgrid
-    vector<int> subgrid1, subgrid2, subgrid3;
-    for(int offset = 0; offset < size; offset+=3) {
+    vector<vector<int>> subgrid(sqrt(size), vector<int>());
+    for(int offset = 0; offset < size; offset+=sqrt(size)) {
         for(int i = 0; i < sqrt(size); i++) {
             for(int j = 0; j < sqrt(size); j++) {
-                if(grid.at((i + offset) * size + j).is_singleton()) {
-                    subgrid1.push_back(grid.at((i + offset) * size + j).possible_values().at(0));
-                }
-                if(grid.at((i + offset) * size + (j + 3)).is_singleton()) {
-                    subgrid2.push_back(grid.at((i + offset) * size + (j + 3)).possible_values().at(0));
-                }
-                if(grid.at((i + offset) * size + (j + 6)).is_singleton()) {
-                    subgrid3.push_back(grid.at((i + offset) * size + (j + 6)).possible_values().at(0));
+                for(int k = 0; k < sqrt(size); k++) {
+                    if(grid.at((i + offset) * size + (j + (k*sqrt(size)))).is_singleton()) {
+                        subgrid.at(k).push_back(grid.at((i + offset) * size + (j + (k*sqrt(size)))).possible_values().at(0));
+                    }
                 }
             }
         }
-        sort(subgrid1.begin(), subgrid1.end());
-        sort(subgrid2.begin(), subgrid2.end());
-        sort(subgrid3.begin(), subgrid3.end());
-        
-        {
-        #ifdef TEST
-        if(!(unique(subgrid1.begin(), subgrid1.end()) == subgrid1.end())) {
-            cout << "Subgrid 1 returned false:\n";
-            for(auto i : subgrid1) cout << i << "\t";
-            return false;
-        }
-        if(!(unique(subgrid2.begin(), subgrid2.end()) == subgrid2.end())) {
-            cout << "Subgrid 2 returned false:\n";
-            for(auto &i : subgrid2) cout << i << "\t";
-            return false;
-        }
-        if(!(unique(subgrid3.begin(), subgrid3.end()) == subgrid3.end())) {
-            cout << "Subgrid 3 returned false:\n";
-            for(auto &i : subgrid3) cout << i << "\t";
-            return false;
-        }
-        #endif
-        }
-        
-        if(!(unique(subgrid1.begin(), subgrid1.end()) == subgrid1.end()) ||
-           !(unique(subgrid2.begin(), subgrid2.end()) == subgrid2.end()) ||
-           !(unique(subgrid3.begin(), subgrid3.end()) == subgrid3.end()))
-                return false;
-        
-        subgrid1.clear(); subgrid2.clear(); subgrid3.clear();
+        for_each(subgrid.begin(), subgrid.end(), [](auto &i) { 
+            sort(i.begin(), i.end()); 
+            if(!(unique(i.begin(), i.end()) == i.end())) return false;
+            i.clear();
+            
+        });
     }
     return true;
 }
@@ -349,7 +320,6 @@ void SudokuGrid::solve() {
     SudokuGrid parent_node(0, 0, size, unsolved, grid);
     parent_node.get_unique_key();
     fringe.push(parent_node);
-    cout << fringe.size() << endl;
     int max_queued_nodes = 0;
     
     while(!fringe.empty()) {

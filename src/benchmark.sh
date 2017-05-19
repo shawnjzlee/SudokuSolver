@@ -3,7 +3,7 @@ do
 	echo -e "\nTesting" $1
 	for ((j = 0; j < 15; j++))
 	do
-		time=$(./sudoku_solver -s 9 -f $1 -t $i | grep -o '[0-9]\.[0-9]*')
+		time=$(./sudoku_solver -s 16 -f $1 -t $i | grep -o '[0-9]\.[0-9]*')
 		echo $time
 # 		sum=$(python -c "print $sum+$time")
 	done

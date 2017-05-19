@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 
 #include "cmdline.h"
@@ -15,8 +16,11 @@ int main(int argc, char * argv[]) {
     flags.parse_check(argc, argv);    
     
     SudokuGrid grid(flags.get<int>("grid_size"), PATH + flags.get<string>("file"));
-    
+    high_resolution_clock::time_point start = high_resolution_clock::now();
     grid.thread_distribution(flags.get<int>("threads"));
+    high_resolution_clock::time_point end = high_resolution_clock::now();
+    duration<double> runtime = duration_cast<duration<double>>(end - start);
+    cout << "Time to solve (in secs): " << runtime.count() << endl;
     
     return 0;
 }

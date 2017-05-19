@@ -247,18 +247,20 @@ bool SudokuGrid::valid_grid() {
         for(int i = 0; i < sqrt(size); i++) {
             for(int j = 0; j < sqrt(size); j++) {
                 for(int k = 0; k < sqrt(size); k++) {
-                    if(grid.at((i + offset) * size + (j + (k*sqrt(size)))).is_singleton()) {
-                        subgrid.at(k).push_back(grid.at((i + offset) * size + (j + (k*sqrt(size)))).possible_values().at(0));
+                    int index = (i + offset) * size + (j + (k*sqrt(size)));
+                    if(grid.at(index).is_singleton()) {
+                        subgrid.at(k).push_back(grid.at(index).possible_values().at(0));
                     }
                 }
             }
         }
-        for_each(subgrid.begin(), subgrid.end(), [](auto &i) { 
-            sort(i.begin(), i.end()); 
-            if(!(unique(i.begin(), i.end()) == i.end())) return false;
+        bool rv = true;
+        for_each(subgrid.begin(), subgrid.end(), [&](auto &i) { 
+            sort(i.begin(), i.end());
+            if(!(unique(i.begin(), i.end()) == i.end())) rv = false;
             i.clear();
-            
         });
+        if(!rv) return false;
     }
     return true;
 }
@@ -321,8 +323,10 @@ void SudokuGrid::solve() {
     parent_node.get_unique_key();
     fringe.push(parent_node);
     int max_queued_nodes = 0;
-    
+    int test = 0;
     while(!fringe.empty()) {
+        if(test == 100) return;
+        else test++;
         parent_node = fringe.front();
         fringe.pop();
         
@@ -361,7 +365,7 @@ void SudokuGrid::solve() {
             if(!child_node.valid_grid()) {
                 #ifdef VERBOSE
                 diff_and_print_grid(parent_node, child_node);
-                cout << "\nGrid is invalid, emplacing previous grid \n";
+                cout << "\n\033[2;33mwarning (singleton): \033[0mGrid is invalid, emplacing previous grid \n";
                 #endif
                 
                 child_node.grid = prev;
@@ -409,6 +413,22 @@ void SudokuGrid::solve() {
             
             child_node.grid.at(unsolved_index).isolate(cell_value);
             child_node.reduce(unsolved_index, cell_value);
+            
+            if(!child_node.valid_grid()) {
+                #ifdef VERBOSE
+                diff_and_print_grid(parent_node, child_node);
+                cout << "\n\033[2;33mwarning (branching): \033[0mGrid is invalid, emplacing previous grid \n";
+                #endif
+                
+                child_node.grid = prev;
+                
+                #ifdef VERBOSE
+                child_node.print_grid();
+                #endif
+                
+                expanded.emplace(child_node);
+                break;
+            }
             
             #ifdef VERBOSE
             cout << "\nBranching...\n";

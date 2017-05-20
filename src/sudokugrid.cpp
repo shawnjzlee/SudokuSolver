@@ -68,7 +68,6 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
             grid.at(index(row, col)).reduce_all_except(cell_value);
         }
     }
-    
 
     row = col = 0;
     
@@ -402,6 +401,15 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         
         if(parent_node.unsolved.empty() && !g_solution_found) {
             g_solution_found = true;
+                        
+            #ifdef BENCH
+            thread_execution_end = high_resolution_clock::now();
+            auto runtime = duration_cast<duration<double>>(thread_execution_end - thread_execution_start);
+            g_benchmark.mutex_benchmark[0].lock();
+            g_benchmark.thread_execution_time.push_back(runtime.count());
+            g_benchmark.mutex_benchmark[0].unlock();
+            #endif
+            
             cout << "\n\nSolution found:\n";
             {
                 lock_guard<mutex> lock(mutex_print_grid);
@@ -495,6 +503,15 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         if(invalid_singleton) continue;
         if(child_node.unsolved.empty() && !g_solution_found) {
             g_solution_found = true;
+            
+            #ifdef BENCH
+            thread_execution_end = high_resolution_clock::now();
+            auto runtime = duration_cast<duration<double>>(thread_execution_end - thread_execution_start);
+            g_benchmark.mutex_benchmark[0].lock();
+            g_benchmark.thread_execution_time.push_back(runtime.count());
+            g_benchmark.mutex_benchmark[0].unlock();
+            #endif
+            
             cout << "\n\nSolution found:\n";
             {
                 lock_guard<mutex> lock(mutex_print_grid);

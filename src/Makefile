@@ -13,6 +13,9 @@ debug: $(EXECUTABLE)
 
 verbose: CFLAGS += -DVERBOSE
 verbose: $(EXECUTABLE)
+
+bench: CFLAGS += -DBENCH
+bench: $(EXECUTABLE)
     
 $(EXECUTABLE): $(OBJECTS) copy
 	mkdir -p $(BUILD_DIR)
@@ -29,15 +32,19 @@ copy:
 	mkdir -p $(BUILD_DIR)
 	cp -f ./Makefile $(BUILD_DIR)/Makefile
 	cp -f ./benchmark.sh $(BUILD_DIR)/benchmark.sh
+	echo "Max Threads,Threads Spawned,Expanded,Depth,Frontier,Total Exec Time,Thread Exec Time,Mutex Lock Time,Mutex Lock Contention" >> $(BUILD_DIR)/results.csv
 	
 restart:
 	cd .. && make && cd bin/ && ./sudoku_solver -s 16 -f ${ARG}
+
+restart_v:
+	cd .. && make verbose && cd bin/ && ./sudoku_solver -s 16 -f ${ARG}
 	
 restart_d:
 	cd .. && make debug && cd bin/ && gdb --args ./sudoku_solver -s 16 -f ${ARG}
 	
-restart_v:
-	cd .. && make verbose && cd bin/ && ./sudoku_solver -s 16 -f ${ARG}
+restart_b:
+	cd .. && make bench && cd bin/ && ./sudoku_solver -s 16 -f ${ARG}
 	
 restart_t:
 	cd .. && make && cd bin/ && ./sudoku_solver -s 16 -f ${ARG1} -t ${ARG2}
@@ -47,3 +54,6 @@ restart_tv:
 	
 restart_td:
 	cd .. && make debug && cd bin/ && gdb --args ./sudoku_solver -s 16 -f ${ARG1} -t ${ARG2}
+		
+restart_tb:
+	cd .. && make bench && cd bin/ && ./sudoku_solver -s 16 -f ${ARG1} -t ${ARG2}

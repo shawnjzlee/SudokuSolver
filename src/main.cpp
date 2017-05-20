@@ -3,6 +3,8 @@
 
 #include "cmdline.h"
 #include "sudokugrid.h"
+#include "global.h"
+
 using namespace std;
 using namespace std::chrono;
 
@@ -22,6 +24,10 @@ int main(int argc, char * argv[]) {
     high_resolution_clock::time_point end = high_resolution_clock::now();
     duration<double> runtime = duration_cast<duration<double>>(end - start);
     cout << "Time to solve (in secs): " << runtime.count() << endl;
+    
+    #ifdef BENCH
+    g_benchmark.get_results(flags.get<int>("threads"), runtime.count());
+    #endif
     
     return 0;
 }

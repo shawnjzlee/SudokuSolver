@@ -87,8 +87,8 @@ SudokuGrid::SudokuGrid(const vector<Point> grid) {
     this->grid = grid;
 }
 
-SudokuGrid::SudokuGrid(const int depth, const int path_cost, const int size, const set<int> unsolved, const vector<Point> grid) :
-        size(size) {
+SudokuGrid::SudokuGrid(const int depth, const int path_cost, const int size, const int tid, const set<int> unsolved, const vector<Point> grid) :
+        size(size), tid(tid) {
     // i'm a child!
     this->node_status.depth = depth;
     this->node_status.path_cost = path_cost;
@@ -310,7 +310,7 @@ string SudokuGrid::get_unique_key() const {
     return bitstring;
 }
 
-void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
+void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int tid) {
     #ifdef VERBOSE
     cout << "Thread " << this_thread::get_id() << " has spawned...\n";
     #endif
@@ -376,7 +376,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
 
     queue<SudokuGrid> fringe;
     
-    SudokuGrid parent_node(0, 0, size, unsolved, grid);
+    SudokuGrid parent_node(0, 0, size, tid, unsolved, grid);
     parent_node.get_unique_key();
     fringe.push(parent_node);
     int max_queued_nodes = 0;
@@ -393,6 +393,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         
         parent_node = fringe.front();
         fringe.pop();
+        // cout << "TID: " << parent_node.tid << endl;
+        #ifdef BENCH
+        g_benchmark.thread_expanded.at(tid)++;
+        #endif
         
         #ifdef VERBOSE
         cout << "Number of unsolved cells: " << parent_node.unsolved.size() << "\n";
@@ -428,6 +432,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         SudokuGrid child_node(parent_node.node_status.depth + 1,
                               parent_node.node_status.path_cost + 1,
                               parent_node.size,
+                              parent_node.tid,
                               parent_node.unsolved,
                               parent_node.grid);
 
@@ -641,6 +646,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
                     
                     expanded.emplace(expanded_node(child_node, unsolved_index));
                     
+                    
                     #ifdef BENCH
                     expanded_emplace_end = high_resolution_clock::now();
                     runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
@@ -681,7 +687,7 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
     
     set<SudokuGrid, PossibleValueCmp> expanded;
     
-    SudokuGrid parent_node(0, 0, size, unsolved, grid);
+    SudokuGrid parent_node(0, 0, size, 0, unsolved, grid);
     parent_node.get_unique_key();
     
     pair<int, deque<int>> dist = fetch(parent_node);
@@ -737,7 +743,7 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
         cout << "\n";
         #endif
         
-        parent_node.solve(expanded);
+        parent_node.solve(expanded, tid);
     }
     else {
         for(int tid(0); tid < num_threads; tid++) {
@@ -750,6 +756,7 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
             int cell_value = possible_values.front();
             possible_values.pop_front();
             
+            parent_node.tid = tid;
             parent_node.grid.at(unsolved_index).isolate(cell_value);
             parent_node.reduce(unsolved_index, cell_value);
             
@@ -788,7 +795,7 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
             cout << "\n";
             #endif
             
-            threads.push_back(thread(&SudokuGrid::solve, this, ref(expanded)));
+            threads.push_back(thread(&SudokuGrid::solve, this, ref(expanded), tid));
         }
     }
     

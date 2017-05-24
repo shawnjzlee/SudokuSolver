@@ -27,6 +27,10 @@ int main(int argc, char * argv[]) {
     }
     else cout << "Spawning " << num_threads << " threads.\n";
     
+    #ifdef BENCH
+    g_benchmark.thread_expanded.resize(num_threads, 0);
+    #endif
+    
     SudokuGrid grid(flags.get<int>("grid_size"), PATH + flags.get<string>("file"));
     high_resolution_clock::time_point start = high_resolution_clock::now();
     grid.thread_distribution(num_threads, true);

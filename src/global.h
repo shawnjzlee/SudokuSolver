@@ -22,11 +22,11 @@ struct Benchmark {
     std::vector<double> mutex_emplace_lock_contention; // 3
     std::vector<double> mutex_find_lock_contention; // 4
     // std::vector<double> sudokugrid_constructor; // 4
-    unsigned int threads_spawned, expanded, depth, max_queued_nodes, total_exec_time;
+    unsigned int expanded, depth, max_queued_nodes, total_exec_time;
     
     std::array<std::mutex, 5> mutex_benchmark;
     
-    Benchmark() : threads_spawned(0), expanded(0), depth(0), max_queued_nodes(0) { };
+    Benchmark() : expanded(0), depth(0), max_queued_nodes(0) { };
     
     void get_results(const int num_threads, const double total_exec_time) {
         std::string file = "results.csv";
@@ -37,7 +37,7 @@ struct Benchmark {
                   << expanded_find_time.size() << ", " << mutex_emplace_lock_contention.size() << ", " 
                   << mutex_find_lock_contention.size()<< std::endl;
                   
-        outfile << num_threads << "," << threads_spawned << "," << expanded << "," << depth << "," << max_queued_nodes << ",";
+        outfile << num_threads << "," << expanded << "," << depth << "," << max_queued_nodes << ",";
         outfile << total_exec_time << ",";
         outfile << AVG(thread_execution_time) << ",";
         outfile << AVG(expanded_emplace_time) << ",";

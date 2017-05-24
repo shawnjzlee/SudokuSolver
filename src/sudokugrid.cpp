@@ -318,10 +318,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
     #ifdef BENCH
     timing expanded_emplace_start, expanded_emplace_end;
     timing expanded_find_start, expanded_find_end;
-    
-    timing expanded_find_start, expanded_find_end;
     timing expanded_rlock_contention_start, expanded_rlock_contention_end;
-    timing expanded_emplace_start, expanded_emplace_end;
     timing expanded_wlock_contention_start, expanded_wlock_contention_end;
     timing thread_execution_start = high_resolution_clock::now(), thread_execution_end;
     #endif

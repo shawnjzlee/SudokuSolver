@@ -32,7 +32,7 @@ copy:
 	mkdir -p $(BUILD_DIR)
 	cp -f ./Makefile $(BUILD_DIR)/Makefile
 	cp -f ./benchmark.sh $(BUILD_DIR)/benchmark.sh
-	echo "Max Threads,Threads Spawned,Expanded,Depth,Frontier,Total Exec Time,Thread Exec Time,Mutex Lock Time,Mutex Lock Contention" >> $(BUILD_DIR)/results.csv
+	echo "Max Threads,Expanded,Depth,Frontier,Total Exec Time,Thread Exec Time,Emplace Time,Find Time,Mutex Emplace Time,Mutex Find Time" >> $(BUILD_DIR)/results.csv
 	
 restart:
 	cd .. && make && cd bin/ && ./sudoku_solver -s 16 -f ${ARG}

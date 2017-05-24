@@ -17,13 +17,14 @@ extern std::atomic_bool g_solution_found;
 
 struct Benchmark {
     std::vector<double> thread_execution_time; // 0
-    std::vector<double> mutex_expanded_rlock_time; // 1
-    std::vector<double> mutex_expanded_wlock_time; // 2
-    std::vector<double> mutex_expanded_lock_contention; // 3
+    std::vector<double> expanded_emplace_time; // 1
+    std::vector<double> expanded_find_time; // 2
+    std::vector<double> mutex_emplace_lock_contention; // 3
+    std::vector<double> mutex_find_lock_contention; // 4
     // std::vector<double> sudokugrid_constructor; // 4
     unsigned int threads_spawned, expanded, depth, max_queued_nodes, total_exec_time;
     
-    std::array<std::mutex, 4> mutex_benchmark;
+    std::array<std::mutex, 5> mutex_benchmark;
     
     Benchmark() : threads_spawned(0), expanded(0), depth(0), max_queued_nodes(0) { };
     
@@ -32,17 +33,17 @@ struct Benchmark {
         std::ofstream outfile;
         
         outfile.open(file, std::fstream::out | std::fstream::app);
-        std::cout << "Container sizes:\t" << thread_execution_time.size() << ", " << mutex_expanded_rlock_time.size() << ", " 
-                  << mutex_expanded_wlock_time.size() << ", " << mutex_expanded_lock_contention.size() << std::endl;
+        std::cout << "Container sizes:\t" << thread_execution_time.size() << ", " << expanded_emplace_time.size() << ", " 
+                  << expanded_find_time.size() << ", " << mutex_emplace_lock_contention.size() << ", " 
+                  << mutex_find_lock_contention.size()<< std::endl;
                   
-        // std::for_each(thread_execution_time.begin(), thread_execution_time.end(), [](auto &i) { std::cout << i << " "; });
         outfile << num_threads << "," << threads_spawned << "," << expanded << "," << depth << "," << max_queued_nodes << ",";
         outfile << total_exec_time << ",";
         outfile << AVG(thread_execution_time) << ",";
-        outfile << AVG(mutex_expanded_rlock_time) << ",";
-        outfile << AVG(mutex_expanded_wlock_time) << ",";
-        outfile << AVG(mutex_expanded_lock_contention);
-        // outfile << std::accumulate(sudokugrid_constructor.begin(), sudokugrid_constructor.end(), 0.0) / sudokugrid_constructor.size() << ",";
+        outfile << AVG(expanded_emplace_time) << ",";
+        outfile << AVG(expanded_find_time) << ",";
+        outfile << AVG(mutex_emplace_lock_contention) << ",";
+        outfile << AVG(mutex_find_lock_contention);
         
         outfile << std::endl;
         outfile.close();

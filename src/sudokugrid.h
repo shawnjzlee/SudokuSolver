@@ -41,7 +41,7 @@ class SudokuGrid : public TreeNode {
         string get_unique_key() const;
         
         void solve(set<SudokuGrid, PossibleValueCmp>&,const int);
-        void thread_distribution(int, bool);
+        void thread_distribution(int, bool, const int);
         void exit_from_error(const int);
         void diff_and_print_grid(SudokuGrid, SudokuGrid);
         void print_grid();

@@ -28,12 +28,17 @@ int main(int argc, char * argv[]) {
     else cout << "Spawning " << num_threads << " threads.\n";
     
     #ifdef BENCH
+    g_benchmark.thread_execution_time.resize(num_threads, 0.0);
     g_benchmark.thread_expanded.resize(num_threads, 0);
+    g_benchmark.thread_emplace_lock.resize(num_threads, 0.0);
+    g_benchmark.thread_find_lock.resize(num_threads, 0.0);
+    g_benchmark.thread_expanded_emplace.resize(num_threads, 0.0);
+    g_benchmark.thread_expanded_find.resize(num_threads, 0.0);
     #endif
     
     SudokuGrid grid(flags.get<int>("grid_size"), PATH + flags.get<string>("file"));
     high_resolution_clock::time_point start = high_resolution_clock::now();
-    grid.thread_distribution(num_threads, true);
+    grid.thread_distribution(num_threads, true, 0);
     high_resolution_clock::time_point end = high_resolution_clock::now();
     duration<double> runtime = duration_cast<duration<double>>(end - start);
     cout << "Time to solve (in secs): " << runtime.count() << endl;

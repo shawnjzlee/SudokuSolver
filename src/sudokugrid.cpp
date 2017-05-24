@@ -335,9 +335,11 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
             #ifdef BENCH
             expanded_rlock_contention_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(expanded_rlock_contention_end - expanded_rlock_contention_start);
-            g_benchmark.mutex_benchmark[4].lock();
-            g_benchmark.mutex_find_lock_contention.push_back(runtime.count());
-            g_benchmark.mutex_benchmark[4].unlock();
+            // g_benchmark.mutex_benchmark[4].lock();
+            // g_benchmark.mutex_find_lock_contention.push_back(runtime.count());
+            assert(tid < g_benchmark.thread_find_lock.size());
+            g_benchmark.thread_find_lock.at(tid) += runtime.count();
+            // g_benchmark.mutex_benchmark[4].unlock();
             
             expanded_find_start = high_resolution_clock::now();
             #endif
@@ -347,9 +349,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                 #ifdef BENCH
                 expanded_find_end = high_resolution_clock::now();
                 runtime = duration_cast<duration<double>>(expanded_find_end - expanded_find_start);
-                g_benchmark.mutex_benchmark[2].lock();
-                g_benchmark.expanded_find_time.push_back(runtime.count());
-                g_benchmark.mutex_benchmark[2].unlock();
+                // g_benchmark.mutex_benchmark[2].lock();
+                // g_benchmark.expanded_find_time.push_back(runtime.count());
+                g_benchmark.thread_expanded_find.at(tid) += runtime.count();
+                // g_benchmark.mutex_benchmark[2].unlock();
                 #endif
                 return true;
             }
@@ -360,9 +363,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                 #ifdef BENCH
                 expanded_find_end = high_resolution_clock::now();
                 runtime = duration_cast<duration<double>>(expanded_find_end - expanded_find_start);
-                g_benchmark.mutex_benchmark[2].lock();
-                g_benchmark.expanded_find_time.push_back(runtime.count());
-                g_benchmark.mutex_benchmark[2].unlock();
+                // g_benchmark.mutex_benchmark[2].lock();
+                // g_benchmark.expanded_find_time.push_back(runtime.count());
+                g_benchmark.thread_expanded_find.at(tid) += runtime.count();
+                // g_benchmark.mutex_benchmark[2].unlock();
                 #endif
                 return false;
             }
@@ -393,7 +397,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
         
         parent_node = fringe.front();
         fringe.pop();
-        // cout << "TID: " << parent_node.tid << endl;
+        // cout << "TID: " << tid << endl;
         #ifdef BENCH
         g_benchmark.thread_expanded.at(tid)++;
         #endif
@@ -408,9 +412,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
             #ifdef BENCH
             thread_execution_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(thread_execution_end - thread_execution_start);
-            g_benchmark.mutex_benchmark[0].lock();
-            g_benchmark.thread_execution_time.push_back(runtime.count());
-            g_benchmark.mutex_benchmark[0].unlock();
+            // g_benchmark.mutex_benchmark[0].lock();
+            // g_benchmark.thread_execution_time.push_back(runtime.count());
+            g_benchmark.thread_execution_time.at(tid) = runtime.count();
+            // g_benchmark.mutex_benchmark[0].unlock();
             #endif
             
             cout << "\n\nSolution found:\n";
@@ -472,9 +477,11 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_wlock_contention_end = high_resolution_clock::now();
                     auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-                    g_benchmark.mutex_benchmark[3].lock();
-                    g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
-                    g_benchmark.mutex_benchmark[3].unlock();
+                    // g_benchmark.mutex_benchmark[3].lock();
+                    // g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
+                    assert(tid < g_benchmark.thread_emplace_lock.size());
+                    g_benchmark.thread_emplace_lock.at(tid) += runtime.count();
+                    // g_benchmark.mutex_benchmark[3].unlock();
                     
                     expanded_emplace_start = high_resolution_clock::now();
                     #endif
@@ -484,9 +491,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_emplace_end = high_resolution_clock::now();
                     runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-                    g_benchmark.mutex_benchmark[1].lock();
-                    g_benchmark.expanded_emplace_time.push_back(runtime.count());
-                    g_benchmark.mutex_benchmark[1].unlock();
+                    // g_benchmark.mutex_benchmark[1].lock();
+                    // g_benchmark.expanded_emplace_time.push_back(runtime.count());
+                    g_benchmark.thread_expanded_emplace.at(tid) += runtime.count();
+                    // g_benchmark.mutex_benchmark[1].unlock();
                     #endif
                 }
                 invalid_singleton = true;
@@ -511,9 +519,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
             #ifdef BENCH
             thread_execution_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(thread_execution_end - thread_execution_start);
-            g_benchmark.mutex_benchmark[0].lock();
-            g_benchmark.thread_execution_time.push_back(runtime.count());
-            g_benchmark.mutex_benchmark[0].unlock();
+            // g_benchmark.mutex_benchmark[0].lock();
+            // g_benchmark.thread_execution_time.push_back(runtime.count());
+            g_benchmark.thread_execution_time.at(tid) = runtime.count();
+            // g_benchmark.mutex_benchmark[0].unlock();
             #endif
             
             cout << "\n\nSolution found:\n";
@@ -550,9 +559,11 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_wlock_contention_end = high_resolution_clock::now();
                     auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-                    g_benchmark.mutex_benchmark[3].lock();
-                    g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
-                    g_benchmark.mutex_benchmark[3].unlock();
+                    // g_benchmark.mutex_benchmark[3].lock();
+                    // g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
+                    assert(tid < g_benchmark.thread_emplace_lock.size());
+                    g_benchmark.thread_emplace_lock.at(tid) += runtime.count();
+                    // g_benchmark.mutex_benchmark[3].unlock();
                     
                     expanded_emplace_start = high_resolution_clock::now();
                     #endif
@@ -562,9 +573,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_emplace_end = high_resolution_clock::now();
                     runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-                    g_benchmark.mutex_benchmark[1].lock();
-                    g_benchmark.expanded_emplace_time.push_back(runtime.count());
-                    g_benchmark.mutex_benchmark[1].unlock();
+                    // g_benchmark.mutex_benchmark[1].lock();
+                    // g_benchmark.expanded_emplace_time.push_back(runtime.count());
+                    g_benchmark.thread_expanded_emplace.at(tid) += runtime.count();
+                    // g_benchmark.mutex_benchmark[1].unlock();
                     #endif
                 }
                 continue;
@@ -595,9 +607,11 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_wlock_contention_end = high_resolution_clock::now();
                     auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-                    g_benchmark.mutex_benchmark[3].lock();
-                    g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
-                    g_benchmark.mutex_benchmark[3].unlock();
+                    // g_benchmark.mutex_benchmark[3].lock();
+                    // g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
+                    assert(tid < g_benchmark.thread_emplace_lock.size());
+                    g_benchmark.thread_emplace_lock.at(tid) += runtime.count();
+                    // g_benchmark.mutex_benchmark[3].unlock();
                     
                     expanded_emplace_start = high_resolution_clock::now();
                     #endif
@@ -607,9 +621,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_emplace_end = high_resolution_clock::now();
                     runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-                    g_benchmark.mutex_benchmark[1].lock();
-                    g_benchmark.expanded_emplace_time.push_back(runtime.count());
-                    g_benchmark.mutex_benchmark[1].unlock();
+                    // g_benchmark.mutex_benchmark[1].lock();
+                    // g_benchmark.expanded_emplace_time.push_back(runtime.count());
+                    g_benchmark.thread_expanded_emplace.at(tid) += runtime.count();
+                    // g_benchmark.mutex_benchmark[1].unlock();
                     #endif
                 }
                 break;
@@ -637,9 +652,11 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_wlock_contention_end = high_resolution_clock::now();
                     auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-                    g_benchmark.mutex_benchmark[3].lock();
-                    g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
-                    g_benchmark.mutex_benchmark[3].unlock();
+                    // g_benchmark.mutex_benchmark[3].lock();
+                    // g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
+                    assert(tid < g_benchmark.thread_emplace_lock.size());
+                    g_benchmark.thread_emplace_lock.at(tid) += runtime.count();
+                    // g_benchmark.mutex_benchmark[3].unlock();
                     
                     expanded_emplace_start = high_resolution_clock::now();
                     #endif
@@ -650,9 +667,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_emplace_end = high_resolution_clock::now();
                     runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-                    g_benchmark.mutex_benchmark[1].lock();
-                    g_benchmark.expanded_emplace_time.push_back(runtime.count());
-                    g_benchmark.mutex_benchmark[1].unlock();
+                    // g_benchmark.mutex_benchmark[1].lock();
+                    // g_benchmark.expanded_emplace_time.push_back(runtime.count());
+                    // g_benchmark.mutex_benchmark[1].unlock();
+                    g_benchmark.thread_expanded_emplace.at(tid) += runtime.count();
                     #endif
                 }
             }
@@ -665,7 +683,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
     }
     // exit_from_error(6);
     
-    thread_distribution(0, false);
+    thread_distribution(0, false, tid);
     // #ifdef BENCH
     // thread_execution_end = high_resolution_clock::now();
     // auto runtime = duration_cast<duration<double>>(thread_execution_end - thread_execution_start);
@@ -675,7 +693,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
     // #endif
 }
 
-void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
+void SudokuGrid::thread_distribution(int num_threads, bool call_from_main, const int thread_id) {
     auto fetch = [](SudokuGrid& node) {
         int unsolved_index = node.max_possible_values();
         vector<int> temp = node.grid.at(unsolved_index).possible_values();
@@ -718,9 +736,11 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
             #ifdef BENCH
             timing expanded_wlock_contention_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-            g_benchmark.mutex_benchmark[3].lock();
-            g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
-            g_benchmark.mutex_benchmark[3].unlock();
+            // g_benchmark.mutex_benchmark[3].lock();
+            // g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
+            assert(thread_id < g_benchmark.thread_emplace_lock.size());
+            g_benchmark.thread_emplace_lock.at(thread_id) += runtime.count();
+            // g_benchmark.mutex_benchmark[3].unlock();
             
             timing expanded_emplace_start = high_resolution_clock::now();
             #endif
@@ -730,9 +750,10 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
             #ifdef BENCH
             timing expanded_emplace_end = high_resolution_clock::now();
             runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-            g_benchmark.mutex_benchmark[1].lock();
-            g_benchmark.expanded_emplace_time.push_back(runtime.count());
-            g_benchmark.mutex_benchmark[1].unlock();
+            // g_benchmark.mutex_benchmark[1].lock();
+            // g_benchmark.expanded_emplace_time.push_back(runtime.count());
+            // g_benchmark.mutex_benchmark[1].unlock();
+            g_benchmark.thread_expanded_emplace.at(thread_id) += runtime.count();
             #endif
         }
         
@@ -743,7 +764,7 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
         cout << "\n";
         #endif
         
-        parent_node.solve(expanded, tid);
+        parent_node.solve(expanded, thread_id);
     }
     else {
         for(int tid(0); tid < num_threads; tid++) {
@@ -770,9 +791,11 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
                 #ifdef BENCH
                 timing expanded_wlock_contention_end = high_resolution_clock::now();
                 auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-                g_benchmark.mutex_benchmark[3].lock();
-                g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
-                g_benchmark.mutex_benchmark[3].unlock();
+                // g_benchmark.mutex_benchmark[3].lock();
+                // g_benchmark.mutex_emplace_lock_contention.push_back(runtime.count());
+                assert(tid < g_benchmark.thread_emplace_lock.size());
+                g_benchmark.thread_emplace_lock.at(tid) += runtime.count();
+                // g_benchmark.mutex_benchmark[3].unlock();
                 
                 timing expanded_emplace_start = high_resolution_clock::now();
                 #endif
@@ -782,9 +805,10 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
                 #ifdef BENCH
                 timing expanded_emplace_end = high_resolution_clock::now();
                 runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-                g_benchmark.mutex_benchmark[1].lock();
-                g_benchmark.expanded_emplace_time.push_back(runtime.count());
-                g_benchmark.mutex_benchmark[1].unlock();
+                // g_benchmark.mutex_benchmark[1].lock();
+                // g_benchmark.expanded_emplace_time.push_back(runtime.count());
+                g_benchmark.thread_expanded_emplace.at(tid) += runtime.count();
+                // g_benchmark.mutex_benchmark[1].unlock();
                 #endif
             }
             

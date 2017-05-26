@@ -23,7 +23,7 @@ class SudokuGrid : public TreeNode {
         SudokuGrid();
         SudokuGrid(const vector<Point>);
         SudokuGrid(const int, const string);
-        SudokuGrid(const int, const int, const int, const int, const set<int>, const vector<Point>);
+        SudokuGrid(const int, const int, const int, const set<int>, const vector<Point>);
         ~SudokuGrid();
         
         vector<Point> get_node_state() const;
@@ -47,7 +47,7 @@ class SudokuGrid : public TreeNode {
         void print_grid();
         
     private:
-        int size, tid;
+        int size;
         set<int> unsolved;
         vector<Point> grid;
 };

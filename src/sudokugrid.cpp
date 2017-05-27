@@ -25,7 +25,9 @@ using namespace std::chrono;
 #endif
     
 set<SudokuGrid, SudokuGrid::PossibleValueCmp> expanded;
-vector<thread> threads;
+int g_unsolved_index;
+deque<int> g_possible_values;
+mutex mutex_deque_possible_values;
 
 SudokuGrid::SudokuGrid() : size(0) { }
 
@@ -644,11 +646,71 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
             max_queued_nodes = fringe.size();
     }
     // exit_from_error(6);
-    
-    thread_distribution(0, false, tid);
+    get_next_state(tid);
 }
 
-void SudokuGrid::thread_distribution(int num_threads, bool call_from_main, const int thread_id) {
+void SudokuGrid::get_next_state(const int thread_id) {
+    auto fetch = [&](SudokuGrid& node) {
+        int unsolved_index = max_possible_values();
+        vector<int> temp = grid.at(unsolved_index).possible_values();
+        deque<int>possible_values(temp.begin(), temp.end());
+        unsolved.erase(find(unsolved.begin(), unsolved.end(), unsolved_index));
+        
+        return make_pair(unsolved_index, possible_values);
+    };
+    
+    SudokuGrid parent_node(0, 0, size, unsolved, grid);
+    
+    {
+        lock_guard<mutex> lock(mutex_deque_possible_values);
+        if(g_possible_values.empty()) {
+            pair<int, deque<int>> dist = fetch(parent_node);
+            g_unsolved_index = dist.first;
+            g_possible_values = dist.second;
+        }
+    }
+    
+    int cell_value = g_possible_values.front();
+    g_possible_values.pop_front();
+    
+    parent_node.grid.at(g_unsolved_index).isolate(cell_value);
+    parent_node.reduce(g_unsolved_index, cell_value);
+    
+    {
+        #ifdef BENCH
+        timing expanded_wlock_contention_start = high_resolution_clock::now();
+        #endif
+        
+        lock_guard<mutex> lock(mutex_expanded_set);
+        
+        #ifdef BENCH
+        timing expanded_wlock_contention_end = high_resolution_clock::now();
+        auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
+        g_benchmark.results.at(thread_id).emplace_lock_time += runtime.count();
+        
+        timing expanded_emplace_start = high_resolution_clock::now();
+        #endif
+        
+        expanded.emplace(parent_node);
+        
+        #ifdef BENCH
+        timing expanded_emplace_end = high_resolution_clock::now();
+        runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
+        g_benchmark.results.at(thread_id).emplace_time += runtime.count();
+        #endif
+    }
+    
+    #ifdef VERBOSE
+    cout << "Initializing with max_value index " << g_unsolved_index << endl;
+    cout << "Possible values: ";
+    for(const auto i : g_possible_values) cout << i << " ";
+    cout << "\n";
+    #endif
+    
+    parent_node.solve(expanded, thread_id);
+}
+
+void SudokuGrid::thread_distribution(int num_threads) {
     auto fetch = [](SudokuGrid& node) {
         int unsolved_index = node.max_possible_values();
         vector<int> temp = node.grid.at(unsolved_index).possible_values();
@@ -661,21 +723,25 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main, const
     SudokuGrid parent_node(0, 0, size, unsolved, grid);
     
     pair<int, deque<int>> dist = fetch(parent_node);
-    int unsolved_index = dist.first;
-    deque<int> possible_values = dist.second;
+    int g_unsolved_index = dist.first;
+    deque<int> g_possible_values = dist.second;
     
-    if(!call_from_main) {
-        if(possible_values.empty()) {
-            dist = fetch(parent_node);
-            unsolved_index = dist.first;
-            possible_values = dist.second;
+    vector<thread> threads;
+    for(int tid(0); tid < num_threads; tid++) {
+        {
+            lock_guard<mutex> lock(mutex_deque_possible_values);
+            if(g_possible_values.empty()) {
+                dist = fetch(parent_node);
+                g_unsolved_index = dist.first;
+                g_possible_values = dist.second;
+            }
         }
         
-        int cell_value = possible_values.front();
-        possible_values.pop_front();
+        int cell_value = g_possible_values.front();
+        g_possible_values.pop_front();
         
-        parent_node.grid.at(unsolved_index).isolate(cell_value);
-        parent_node.reduce(unsolved_index, cell_value);
+        parent_node.grid.at(g_unsolved_index).isolate(cell_value);
+        parent_node.reduce(g_unsolved_index, cell_value);
         
         {
             #ifdef BENCH
@@ -687,7 +753,7 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main, const
             #ifdef BENCH
             timing expanded_wlock_contention_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-            g_benchmark.results.at(thread_id).emplace_lock_time += runtime.count();
+            g_benchmark.results.at(tid).emplace_lock_time += runtime.count();
             
             timing expanded_emplace_start = high_resolution_clock::now();
             #endif
@@ -697,68 +763,19 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main, const
             #ifdef BENCH
             timing expanded_emplace_end = high_resolution_clock::now();
             runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-            g_benchmark.results.at(thread_id).emplace_time += runtime.count();
+            g_benchmark.results.at(tid).emplace_time += runtime.count();
             #endif
         }
         
         #ifdef VERBOSE
-        cout << "Initializing with max_value index " << unsolved_index << endl;
+        cout << "Initializing with max_value index " << g_unsolved_index << endl;
         cout << "Possible values: ";
-        for(const auto i : possible_values) cout << i << " ";
+        for(const auto i : g_possible_values) cout << i << " ";
         cout << "\n";
         #endif
         
-        parent_node.solve(expanded, thread_id);
+        threads.push_back(thread(&SudokuGrid::solve, this, ref(expanded), tid));
     }
-    else {
-        for(int tid(0); tid < num_threads; tid++) {
-            if(possible_values.empty()) {
-                dist = fetch(parent_node);
-                unsolved_index = dist.first;
-                possible_values = dist.second;
-            }
-            
-            int cell_value = possible_values.front();
-            possible_values.pop_front();
-            
-            parent_node.grid.at(unsolved_index).isolate(cell_value);
-            parent_node.reduce(unsolved_index, cell_value);
-            
-            {
-                #ifdef BENCH
-                timing expanded_wlock_contention_start = high_resolution_clock::now();
-                #endif
-                
-                lock_guard<mutex> lock(mutex_expanded_set);
-                
-                #ifdef BENCH
-                timing expanded_wlock_contention_end = high_resolution_clock::now();
-                auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-                g_benchmark.results.at(tid).emplace_lock_time += runtime.count();
-                
-                timing expanded_emplace_start = high_resolution_clock::now();
-                #endif
-                
-                expanded.emplace(parent_node);
-                
-                #ifdef BENCH
-                timing expanded_emplace_end = high_resolution_clock::now();
-                runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-                g_benchmark.results.at(tid).emplace_time += runtime.count();
-                #endif
-            }
-            
-            #ifdef VERBOSE
-            cout << "Initializing with max_value index " << unsolved_index << endl;
-            cout << "Possible values: ";
-            for(const auto i : possible_values) cout << i << " ";
-            cout << "\n";
-            #endif
-            
-            threads.push_back(thread(&SudokuGrid::solve, this, ref(expanded), tid));
-        }
-    }
-    
     for_each(threads.begin(), threads.end(), mem_fn(&thread::join));
 }
 

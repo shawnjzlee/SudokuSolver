@@ -48,8 +48,6 @@ struct Benchmark {
                     << results.at(i).find_time << ","
                     << std::endl;
         }
-        
-        outfile << std::endl;
         outfile.close();
     }
 };

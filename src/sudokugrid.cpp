@@ -321,6 +321,8 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
     #endif
     
     #ifdef BENCH
+    g_benchmark.results.emplace(make_pair(this_thread::get_id(), Benchmark::per_thread()));
+
     timing expanded_emplace_start, expanded_emplace_end;
     timing expanded_find_start, expanded_find_end;
     timing expanded_rlock_contention_start, expanded_rlock_contention_end;
@@ -340,8 +342,8 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
             #ifdef BENCH
             expanded_rlock_contention_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(expanded_rlock_contention_end - expanded_rlock_contention_start);
-            g_benchmark.results.at(tid).find_lock_time += runtime.count();
-            
+            g_benchmark.results.at(this_thread::get_id()).find_lock_time += runtime.count();
+                        
             expanded_find_start = high_resolution_clock::now();
             #endif
             
@@ -350,7 +352,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                 #ifdef BENCH
                 expanded_find_end = high_resolution_clock::now();
                 runtime = duration_cast<duration<double>>(expanded_find_end - expanded_find_start);
-                g_benchmark.results.at(tid).find_time += runtime.count();
+                g_benchmark.results.at(this_thread::get_id()).find_time += runtime.count();
                 #endif
                 return true;
             }
@@ -361,7 +363,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                 #ifdef BENCH
                 expanded_find_end = high_resolution_clock::now();
                 runtime = duration_cast<duration<double>>(expanded_find_end - expanded_find_start);
-                g_benchmark.results.at(tid).find_time += runtime.count();
+                g_benchmark.results.at(this_thread::get_id()).find_time += runtime.count();
                 #endif
                 return false;
             }
@@ -387,6 +389,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
         g_benchmark.results.at(tid).grids_expanded++;
         #endif
         
+        #ifdef BENCH
+        g_benchmark.results.at(this_thread::get_id()).grids_expanded++;
+        #endif
+        
         #ifdef VERBOSE
         cout << "Number of unsolved cells: " << parent_node.unsolved.size() << "\n";
         #endif
@@ -397,7 +403,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
             #ifdef BENCH
             thread_execution_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(thread_execution_end - thread_execution_start);
-            g_benchmark.results.at(tid).execution_time = runtime.count();
+            g_benchmark.results.at(this_thread::get_id()).execution_time = runtime.count();
             #endif
             
             cout << "\n\nSolution found:\n";
@@ -418,7 +424,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
             #ifdef BENCH
             thread_execution_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(thread_execution_end - thread_execution_start);
-            g_benchmark.results.at(tid).execution_time = runtime.count();
+            g_benchmark.results.at(this_thread::get_id()).execution_time = runtime.count();
             #endif
             return;
         }
@@ -465,7 +471,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_wlock_contention_end = high_resolution_clock::now();
                     auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-                    g_benchmark.results.at(tid).emplace_lock_time += runtime.count();
+                    g_benchmark.results.at(this_thread::get_id()).emplace_lock_time += runtime.count();
                     
                     expanded_emplace_start = high_resolution_clock::now();
                     #endif
@@ -475,7 +481,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_emplace_end = high_resolution_clock::now();
                     runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-                    g_benchmark.results.at(tid).emplace_time += runtime.count();
+                    g_benchmark.results.at(this_thread::get_id()).emplace_time += runtime.count();
                     #endif
                 }
                 invalid_singleton = true;
@@ -500,7 +506,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
             #ifdef BENCH
             thread_execution_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(thread_execution_end - thread_execution_start);
-            g_benchmark.results.at(tid).execution_time = runtime.count();
+            g_benchmark.results.at(this_thread::get_id()).execution_time = runtime.count();
             #endif
             
             cout << "\n\nSolution found:\n";
@@ -521,7 +527,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
             #ifdef BENCH
             thread_execution_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(thread_execution_end - thread_execution_start);
-            g_benchmark.results.at(tid).execution_time = runtime.count();
+            g_benchmark.results.at(this_thread::get_id()).execution_time = runtime.count();
             #endif
             return;
         }
@@ -544,7 +550,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_wlock_contention_end = high_resolution_clock::now();
                     auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-                    g_benchmark.results.at(tid).emplace_lock_time += runtime.count();
+                    g_benchmark.results.at(this_thread::get_id()).emplace_lock_time += runtime.count();
                     
                     expanded_emplace_start = high_resolution_clock::now();
                     #endif
@@ -554,7 +560,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_emplace_end = high_resolution_clock::now();
                     runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-                    g_benchmark.results.at(tid).emplace_time += runtime.count();
+                    g_benchmark.results.at(this_thread::get_id()).emplace_time += runtime.count();
                     #endif
                 }
                 continue;
@@ -585,7 +591,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_wlock_contention_end = high_resolution_clock::now();
                     auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-                    g_benchmark.results.at(tid).emplace_lock_time += runtime.count();
+                    g_benchmark.results.at(this_thread::get_id()).emplace_lock_time += runtime.count();
                     
                     expanded_emplace_start = high_resolution_clock::now();
                     #endif
@@ -595,7 +601,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_emplace_end = high_resolution_clock::now();
                     runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-                    g_benchmark.results.at(tid).emplace_time += runtime.count();
+                    g_benchmark.results.at(this_thread::get_id()).emplace_time += runtime.count();
                     #endif
                 }
                 break;
@@ -623,7 +629,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_wlock_contention_end = high_resolution_clock::now();
                     auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-                    g_benchmark.results.at(tid).emplace_lock_time += runtime.count();
+                    g_benchmark.results.at(this_thread::get_id()).emplace_lock_time += runtime.count();
                     
                     expanded_emplace_start = high_resolution_clock::now();
                     #endif
@@ -634,7 +640,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded, const int ti
                     #ifdef BENCH
                     expanded_emplace_end = high_resolution_clock::now();
                     runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-                    g_benchmark.results.at(tid).emplace_time += runtime.count();
+                    g_benchmark.results.at(this_thread::get_id()).emplace_time += runtime.count();
                     #endif
                 }
             }
@@ -707,7 +713,7 @@ void SudokuGrid::get_next_state(const int thread_id) {
     cout << "\n";
     #endif
     
-    parent_node.solve(expanded, thread_id);
+    thread_distribution(0, false);
 }
 
 void SudokuGrid::thread_distribution(int num_threads) {
@@ -753,7 +759,7 @@ void SudokuGrid::thread_distribution(int num_threads) {
             #ifdef BENCH
             timing expanded_wlock_contention_end = high_resolution_clock::now();
             auto runtime = duration_cast<duration<double>>(expanded_wlock_contention_end - expanded_wlock_contention_start);
-            g_benchmark.results.at(tid).emplace_lock_time += runtime.count();
+            g_benchmark.results.at(this_thread::get_id()).emplace_lock_time += runtime.count();
             
             timing expanded_emplace_start = high_resolution_clock::now();
             #endif
@@ -763,7 +769,7 @@ void SudokuGrid::thread_distribution(int num_threads) {
             #ifdef BENCH
             timing expanded_emplace_end = high_resolution_clock::now();
             runtime = duration_cast<duration<double>>(expanded_emplace_end - expanded_emplace_start);
-            g_benchmark.results.at(tid).emplace_time += runtime.count();
+            g_benchmark.results.at(this_thread::get_id()).emplace_time += runtime.count();
             #endif
         }
         
@@ -774,7 +780,34 @@ void SudokuGrid::thread_distribution(int num_threads) {
         cout << "\n";
         #endif
         
-        threads.push_back(thread(&SudokuGrid::solve, this, ref(expanded), tid));
+        parent_node.solve(expanded);
+    }
+    else {
+        for(int tid(0); tid < num_threads; tid++) {
+            if(possible_values.empty()) {
+                dist = fetch(parent_node);
+                unsolved_index = dist.first;
+                possible_values = dist.second;
+            }
+            
+            int cell_value = possible_values.front();
+            possible_values.pop_front();
+            
+            parent_node.grid.at(unsolved_index).isolate(cell_value);
+            parent_node.reduce(unsolved_index, cell_value);
+
+            lock_guard<mutex> lock(mutex_expanded_set);
+            expanded.emplace(parent_node);
+
+            #ifdef VERBOSE
+            cout << "Initializing with max_value index " << unsolved_index << endl;
+            cout << "Possible values: ";
+            for(const auto i : possible_values) cout << i << " ";
+            cout << "\n";
+            #endif
+            
+            threads.push_back(thread(&SudokuGrid::solve, this, ref(expanded)));
+        }
     }
     for_each(threads.begin(), threads.end(), mem_fn(&thread::join));
 }

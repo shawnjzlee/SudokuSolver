@@ -8,12 +8,12 @@
 #include <fstream>
 #include <numeric>
 #include <algorithm>
+#include <thread>
+#include <map>
 
 extern std::mutex mutex_expanded_set;
 extern std::mutex mutex_print_grid;
 extern std::atomic_bool g_solution_found;
-
-#define AVG(X) std::accumulate(X.begin(), X.end(), 0.0) / X.size()
 
 struct Benchmark {
     struct per_thread {
@@ -25,8 +25,13 @@ struct Benchmark {
         double find_time;
         
         char buffer[100];
+        
+        per_thread()
+            : execution_time(0.0), grids_expanded(0), emplace_lock_time(0.0),
+              find_lock_time(0.0), emplace_time(0.0), find_time(0.0) { }
     };
-    std::vector<per_thread> results;
+    std::map<std::thread::id, per_thread> results;
+    // std::vector<per_thread> results;
     
     int expanded, depth, max_queued_nodes;
     
@@ -38,16 +43,22 @@ struct Benchmark {
         
         outfile.open(file, std::fstream::out | std::fstream::app);
         
-        for(int i = 0; i < results.size(); i++) {
-            outfile << i << ","
-                    << results.at(i).execution_time << ","
-                    << results.at(i).grids_expanded << ","
-                    << results.at(i).emplace_lock_time << ","
-                    << results.at(i).find_lock_time << ","
-                    << results.at(i).emplace_time << ","
-                    << results.at(i).find_time << ","
+        
+        for_each(results.begin(), results.end(), [&](auto &i){
+            outfile << i.first << ","
+                    << total_exec_time << ","
+                    << expanded << ","
+                    << depth << ","
+                    << max_queued_nodes << ","
+                    << i.second.execution_time << ","
+                    << i.second.grids_expanded << ","
+                    << i.second.emplace_lock_time << ","
+                    << i.second.find_lock_time << ","
+                    << i.second.emplace_time << ","
+                    << i.second.find_time
                     << std::endl;
-        }
+        });
+
         outfile.close();
     }
 };

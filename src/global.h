@@ -8,44 +8,57 @@
 #include <fstream>
 #include <numeric>
 #include <algorithm>
+#include <thread>
+#include <map>
 
 extern std::mutex mutex_expanded_set;
 extern std::mutex mutex_print_grid;
 extern std::atomic_bool g_solution_found;
 
-#define AVG(X) std::accumulate(X.begin(), X.end(), 0.0) / X.size()
-
 struct Benchmark {
-    std::vector<double> thread_execution_time; // 0
-    std::vector<double> expanded_emplace_time; // 1
-    std::vector<double> expanded_find_time; // 2
-    std::vector<double> mutex_emplace_lock_contention; // 3
-    std::vector<double> mutex_find_lock_contention; // 4
-    // std::vector<double> sudokugrid_constructor; // 4
-    unsigned int threads_spawned, expanded, depth, max_queued_nodes, total_exec_time;
+    struct per_thread {
+        double execution_time;
+        int grids_expanded;
+        double emplace_lock_time;
+        double find_lock_time;
+        double emplace_time;
+        double find_time;
+        
+        char buffer[100];
+        
+        per_thread()
+            : execution_time(0.0), grids_expanded(0), emplace_lock_time(0.0),
+              find_lock_time(0.0), emplace_time(0.0), find_time(0.0) { }
+    };
+    std::map<std::thread::id, per_thread> results;
+    // std::vector<per_thread> results;
     
-    std::array<std::mutex, 5> mutex_benchmark;
+    int expanded, depth, max_queued_nodes;
     
-    Benchmark() : threads_spawned(0), expanded(0), depth(0), max_queued_nodes(0) { };
+    Benchmark() : expanded(0), depth(0), max_queued_nodes(0) { };
     
     void get_results(const int num_threads, const double total_exec_time) {
         std::string file = "results.csv";
         std::ofstream outfile;
         
         outfile.open(file, std::fstream::out | std::fstream::app);
-        std::cout << "Container sizes:\t" << thread_execution_time.size() << ", " << expanded_emplace_time.size() << ", " 
-                  << expanded_find_time.size() << ", " << mutex_emplace_lock_contention.size() << ", " 
-                  << mutex_find_lock_contention.size()<< std::endl;
-                  
-        outfile << num_threads << "," << threads_spawned << "," << expanded << "," << depth << "," << max_queued_nodes << ",";
-        outfile << total_exec_time << ",";
-        outfile << AVG(thread_execution_time) << ",";
-        outfile << AVG(expanded_emplace_time) << ",";
-        outfile << AVG(expanded_find_time) << ",";
-        outfile << AVG(mutex_emplace_lock_contention) << ",";
-        outfile << AVG(mutex_find_lock_contention);
         
-        outfile << std::endl;
+        
+        for_each(results.begin(), results.end(), [&](auto &i){
+            outfile << i.first << ","
+                    << total_exec_time << ","
+                    << expanded << ","
+                    << depth << ","
+                    << max_queued_nodes << ","
+                    << i.second.execution_time << ","
+                    << i.second.grids_expanded << ","
+                    << i.second.emplace_lock_time << ","
+                    << i.second.find_lock_time << ","
+                    << i.second.emplace_time << ","
+                    << i.second.find_time
+                    << std::endl;
+        });
+
         outfile.close();
     }
 };

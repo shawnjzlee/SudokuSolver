@@ -63,7 +63,7 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
 
             grid.at(index(row, col)).value.set();
             
-            bool rc = valid_reduction(index(row, col), cell_value);
+            bool rc = valid_reduction(index(row, col), cell_value, true);
             if (!rc) exit_from_error(4);
             grid.at(index(row, col)).reduce_all_except(cell_value);
         }
@@ -76,7 +76,7 @@ SudokuGrid::SudokuGrid(const int size, const string file) :
     
     for(int index = 0; index < grid.size(); index++)
         if(grid.at(index).is_singleton())
-            reduce(index, grid.at(index).possible_values().at(0));
+            reduce(index, grid.at(index).possible_values().at(0), true);
 
     infile.close();
     
@@ -112,10 +112,13 @@ int SudokuGrid::index(const int row, const int col) {
     return row * size + col;
 }
 
-void SudokuGrid::reduce(const int index, const int cell_value) {
+void SudokuGrid::reduce(const int index, const int cell_value, const bool serial) {
     #ifdef BENCH
-    timing reduce_start = high_resolution_clock::now(), reduce_end;
-    g_benchmark.results.at(this_thread::get_id()).reductions++;
+    timing reduce_start, reduce_end;
+    if(!serial) {
+        reduce_start = high_resolution_clock::now();
+        g_benchmark.results.at(this_thread::get_id()).reductions++;
+    }
     #endif
     int traversed(0), row((index / size) * size), col(index % size);
     for(; traversed < size; row++, col+=size, traversed++) {
@@ -157,16 +160,21 @@ void SudokuGrid::reduce(const int index, const int cell_value) {
         }
     }
     #ifdef BENCH
-    reduce_end = high_resolution_clock::now();
-    auto runtime = duration_cast<duration<double>>(reduce_end - reduce_start);
-    g_benchmark.results.at(this_thread::get_id()).reduction_time += runtime.count();
+    if(!serial) {
+        reduce_end = high_resolution_clock::now();
+        auto runtime = duration_cast<duration<double>>(reduce_end - reduce_start);
+        g_benchmark.results.at(this_thread::get_id()).reduction_time += runtime.count();
+    }
     #endif
 }
 
-bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
+bool SudokuGrid::valid_reduction(const int index, const int cell_value, const bool serial) {
     #ifdef BENCH
-    timing reduction_check_start = high_resolution_clock::now(), reduction_check_end;
-    g_benchmark.results.at(this_thread::get_id()).reduction_checks++;
+    timing reduction_check_start, reduction_check_end;
+    if(!serial) {
+        reduction_check_start = high_resolution_clock::now();
+        g_benchmark.results.at(this_thread::get_id()).reduction_checks++;
+    }
     #endif
     int traversed(0), row((index / size) * size), col(index % size);
     for(; traversed < size; row++, col+=size, traversed++) {
@@ -177,9 +185,11 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
                      << " invalid due to conflict with row " << row << endl;
                 #endif
                 #ifdef BENCH
-                reduction_check_end = high_resolution_clock::now();
-                auto runtime = duration_cast<duration<double>>(reduction_check_end - reduction_check_start);
-                g_benchmark.results.at(this_thread::get_id()).reduction_check_time += runtime.count();
+                if(!serial) {
+                    reduction_check_end = high_resolution_clock::now();
+                    auto runtime = duration_cast<duration<double>>(reduction_check_end - reduction_check_start);
+                    g_benchmark.results.at(this_thread::get_id()).reduction_check_time += runtime.count();
+                }
                 #endif
                 return false;
             }
@@ -190,9 +200,11 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
                      << " invalid due to conflict with col " << col << endl;
                 #endif
                 #ifdef BENCH
-                reduction_check_end = high_resolution_clock::now();
-                auto runtime = duration_cast<duration<double>>(reduction_check_end - reduction_check_start);
-                g_benchmark.results.at(this_thread::get_id()).reduction_check_time += runtime.count();
+                if(!serial) {
+                    reduction_check_end = high_resolution_clock::now();
+                    auto runtime = duration_cast<duration<double>>(reduction_check_end - reduction_check_start);
+                    g_benchmark.results.at(this_thread::get_id()).reduction_check_time += runtime.count();
+                }
                 #endif
                 return false;
             }
@@ -235,26 +247,33 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
                          << " invalid at index " << index << endl;
                     #endif
                     #ifdef BENCH
-                    reduction_check_end = high_resolution_clock::now();
-                    auto runtime = duration_cast<duration<double>>(reduction_check_end - reduction_check_start);
-                    g_benchmark.results.at(this_thread::get_id()).reduction_check_time += runtime.count();
+                    if(!serial) {
+                        reduction_check_end = high_resolution_clock::now();
+                        auto runtime = duration_cast<duration<double>>(reduction_check_end - reduction_check_start);
+                        g_benchmark.results.at(this_thread::get_id()).reduction_check_time += runtime.count();
+                    }
                     #endif
                     return false;
                 }
         }
     }
     #ifdef BENCH
-    reduction_check_end = high_resolution_clock::now();
-    auto runtime = duration_cast<duration<double>>(reduction_check_end - reduction_check_start);
-    g_benchmark.results.at(this_thread::get_id()).reduction_check_time += runtime.count();
+    if(!serial) {
+        reduction_check_end = high_resolution_clock::now();
+        auto runtime = duration_cast<duration<double>>(reduction_check_end - reduction_check_start);
+        g_benchmark.results.at(this_thread::get_id()).reduction_check_time += runtime.count();
+    }
     #endif
     return true;
 }
 
-bool SudokuGrid::valid_grid() {
+bool SudokuGrid::valid_grid(const bool serial) {
     #ifdef BENCH
-    timing valid_grid_start = high_resolution_clock::now(), valid_grid_end;
-    g_benchmark.results.at(this_thread::get_id()).valid_grid_checks++;
+    timing valid_grid_start, valid_grid_end;
+    if(!serial) {
+        valid_grid_start = high_resolution_clock::now();
+        g_benchmark.results.at(this_thread::get_id()).valid_grid_checks++;
+    }
     #endif
     vector<int> row_values, col_values;
     for(int i = 0; i < grid.size(); i+=size) {
@@ -267,9 +286,11 @@ bool SudokuGrid::valid_grid() {
         sort(row_values.begin(), row_values.end());
         if(!(unique(row_values.begin(), row_values.end()) == row_values.end())) {
             #ifdef BENCH
-            valid_grid_end = high_resolution_clock::now();
-            auto runtime = duration_cast<duration<double>>(valid_grid_end - valid_grid_start);
-            g_benchmark.results.at(this_thread::get_id()).valid_grid_check_time += runtime.count();
+            if(!serial) {
+                valid_grid_end = high_resolution_clock::now();
+                auto runtime = duration_cast<duration<double>>(valid_grid_end - valid_grid_start);
+                g_benchmark.results.at(this_thread::get_id()).valid_grid_check_time += runtime.count();
+            }
             #endif
             return false;
         }
@@ -285,9 +306,11 @@ bool SudokuGrid::valid_grid() {
         sort(col_values.begin(), col_values.end());
         if(!(unique(col_values.begin(), col_values.end()) == col_values.end())) {
             #ifdef BENCH
-            valid_grid_end = high_resolution_clock::now();
-            auto runtime = duration_cast<duration<double>>(valid_grid_end - valid_grid_start);
-            g_benchmark.results.at(this_thread::get_id()).valid_grid_check_time += runtime.count();
+            if(!serial) {
+                valid_grid_end = high_resolution_clock::now();
+                auto runtime = duration_cast<duration<double>>(valid_grid_end - valid_grid_start);
+                g_benchmark.results.at(this_thread::get_id()).valid_grid_check_time += runtime.count();
+            }
             #endif
             return false;
         }
@@ -313,17 +336,21 @@ bool SudokuGrid::valid_grid() {
         });
         if(!rv) {
             #ifdef BENCH
-            valid_grid_end = high_resolution_clock::now();
-            auto runtime = duration_cast<duration<double>>(valid_grid_end - valid_grid_start);
-            g_benchmark.results.at(this_thread::get_id()).valid_grid_check_time += runtime.count();
+            if(!serial) {
+                valid_grid_end = high_resolution_clock::now();
+                auto runtime = duration_cast<duration<double>>(valid_grid_end - valid_grid_start);
+                g_benchmark.results.at(this_thread::get_id()).valid_grid_check_time += runtime.count();
+            }
             #endif
             return false;
         }
     }
     #ifdef BENCH
-    valid_grid_end = high_resolution_clock::now();
-    auto runtime = duration_cast<duration<double>>(valid_grid_end - valid_grid_start);
-    g_benchmark.results.at(this_thread::get_id()).valid_grid_check_time += runtime.count();
+    if(!serial) {
+        valid_grid_end = high_resolution_clock::now();
+        auto runtime = duration_cast<duration<double>>(valid_grid_end - valid_grid_start);
+        g_benchmark.results.at(this_thread::get_id()).valid_grid_check_time += runtime.count();
+    }
     #endif
     return true;
 }
@@ -499,9 +526,9 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
             #endif
             
             child_node.grid.at(unsolved_index).isolate(cell_value);
-            child_node.reduce(unsolved_index, cell_value);
+            child_node.reduce(unsolved_index, cell_value, false);
             
-            if(!child_node.valid_grid()) {
+            if(!child_node.valid_grid(false)) {
                 #ifdef VERBOSE
                 diff_and_print_grid(parent_node, child_node);
                 cout << "\n\033[2;33mwarning (singleton): \033[0mGrid is invalid, emplacing previous grid \n";
@@ -587,7 +614,7 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         // BRANCHING FACTOR
         vector<Point> prev = child_node.grid;
         for(auto cell_value : child_node.grid.at(unsolved_index).possible_values()) {
-            if(!valid_reduction(unsolved_index, cell_value)) {
+            if(!valid_reduction(unsolved_index, cell_value, false)) {
                 #ifdef VERBOSE
                 cout << "In branching, cell value " << cell_value << " is invalid at " << unsolved_index << endl;
                 diff_and_print_grid(parent_node, child_node);
@@ -619,9 +646,9 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
             }
             
             child_node.grid.at(unsolved_index).isolate(cell_value);
-            child_node.reduce(unsolved_index, cell_value);
+            child_node.reduce(unsolved_index, cell_value, false);
             
-            if(!child_node.valid_grid()) {
+            if(!child_node.valid_grid(false)) {
                 #ifdef VERBOSE
                 diff_and_print_grid(parent_node, child_node);
                 cout << "\n\033[2;33mwarning (branching): \033[0mGrid is invalid, emplacing previous grid \n";
@@ -738,7 +765,7 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
         possible_values.pop_front();
         
         parent_node.grid.at(unsolved_index).isolate(cell_value);
-        parent_node.reduce(unsolved_index, cell_value);
+        parent_node.reduce(unsolved_index, cell_value, false);
         
         {
             #ifdef BENCH
@@ -785,7 +812,7 @@ void SudokuGrid::thread_distribution(int num_threads, bool call_from_main) {
             possible_values.pop_front();
             
             parent_node.grid.at(unsolved_index).isolate(cell_value);
-            parent_node.reduce(unsolved_index, cell_value);
+            parent_node.reduce(unsolved_index, cell_value, true);
 
             lock_guard<mutex> lock(mutex_expanded_set);
             expanded.emplace(parent_node);

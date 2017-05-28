@@ -517,6 +517,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         bool invalid_singleton = false;
         int unsolved_index = child_node.min_possible_values();
         // REDUCE ALL SINGLETONS IN THIS INSTANCE
+        #ifdef BENCH
+        timing singleton_reduction_start = high_resolution_clock::now(), singleton_reduction_end;
+        g_benchmark.results.at(this_thread::get_id()).singleton_reduction_attempts++;
+        #endif
         while (child_node.grid.at(unsolved_index).is_singleton()) {
             vector<Point> prev = child_node.grid;
             int cell_value = child_node.grid.at(unsolved_index).possible_values().at(0);
@@ -577,6 +581,11 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
             
             unsolved_index = child_node.min_possible_values();
         }
+        #ifdef BENCH
+        singleton_reduction_end = high_resolution_clock::now();
+        auto runtime = duration_cast<duration<double>>(singleton_reduction_end - singleton_reduction_start);
+        g_benchmark.results.at(this_thread::get_id()).singleton_reduction_time += runtime.count();
+        #endif
         
         if(invalid_singleton) continue;
         if(child_node.unsolved.empty() && !g_solution_found) {
@@ -612,6 +621,10 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         }
         
         // BRANCHING FACTOR
+        #ifdef BENCH
+        timing branching_reduction_start = high_resolution_clock::now(), branching_reduction_end;
+        g_benchmark.results.at(this_thread::get_id()).branching_attempts++;
+        #endif
         vector<Point> prev = child_node.grid;
         for(auto cell_value : child_node.grid.at(unsolved_index).possible_values()) {
             if(!valid_reduction(unsolved_index, cell_value, false)) {
@@ -724,6 +737,11 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
             }
             child_node.grid = prev;
         }
+        #ifdef BENCH
+        branching_reduction_end = high_resolution_clock::now();
+        runtime = duration_cast<duration<double>>(branching_reduction_end - branching_reduction_start);
+        g_benchmark.results.at(this_thread::get_id()).branching_reduction_time += runtime.count();
+        #endif
         
         child_node.grid = parent_node.grid;
         if(fringe.size() > max_queued_nodes)

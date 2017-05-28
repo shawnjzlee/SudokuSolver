@@ -35,9 +35,9 @@ class SudokuGrid : public TreeNode {
         int min_possible_values();
         int max_possible_values();
         
-        void reduce(const int, const int, bool);
-        bool valid_grid(bool);
-        bool valid_reduction(const int, const int, bool);
+        void reduce(const int, const int, const bool);
+        bool valid_grid(const bool);
+        bool valid_reduction(const int, const int, const bool);
         string get_unique_key() const;
         
         void solve(set<SudokuGrid, PossibleValueCmp>&);

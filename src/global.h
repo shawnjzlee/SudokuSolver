@@ -33,6 +33,7 @@ struct Benchmark {
         int singleton_reduction_attempts;
         double singleton_reduction_time;
         int branching_attempts;
+        int branching_iterations;
         double branching_reduction_time;
         
         char buffer[100];
@@ -43,7 +44,7 @@ struct Benchmark {
               valid_grid_checks(0), valid_grid_check_time(0.0), reduction_checks(0),
               reduction_check_time(0.0), reductions(0), reduction_time(0.0),
               singleton_reduction_attempts(0), singleton_reduction_time(0.0), 
-              branching_attempts(0), branching_reduction_time(0.0) { }
+              branching_attempts(0), branching_iterations(0), branching_reduction_time(0.0) { }
     };
     std::map<std::thread::id, per_thread> results;
 
@@ -91,6 +92,7 @@ struct Benchmark {
                     << i.second.singleton_reduction_attempts << ","
                     << i.second.singleton_reduction_time << ","
                     << i.second.branching_attempts << ","
+                    << i.second.branching_iterations << ","
                     << i.second.branching_reduction_time
                     << std::endl;
         });

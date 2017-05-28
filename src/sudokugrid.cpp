@@ -627,6 +627,9 @@ void SudokuGrid::solve(set<SudokuGrid, PossibleValueCmp>& expanded) {
         #endif
         vector<Point> prev = child_node.grid;
         for(auto cell_value : child_node.grid.at(unsolved_index).possible_values()) {
+            #ifdef BENCH
+            g_benchmark.results.at(this_thread::get_id()).branching_iterations++;
+            #endif
             if(!valid_reduction(unsolved_index, cell_value, false)) {
                 #ifdef VERBOSE
                 cout << "In branching, cell value " << cell_value << " is invalid at " << unsolved_index << endl;

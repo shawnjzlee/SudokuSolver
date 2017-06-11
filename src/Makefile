@@ -32,8 +32,7 @@ copy:
 	mkdir -p $(BUILD_DIR)
 	cp -f ./Makefile $(BUILD_DIR)/Makefile
 	cp -f ./benchmark.sh $(BUILD_DIR)/benchmark.sh
-	echo "TID,Total Exec Time,Total Grids Expanded,Furthest Depth,Largest Fringe Size,Execution Time/Thread,Grids Expanded,Emplace Lock Time,Find Lock Time,Emplace Time,Find Time,valid_grid() checks,valid_grid() time,reduction checks,reduction check time,reductions,reduction time,singleton redux cnt,singleton redux time,branching cnt,branching iter,branching time" >> $(BUILD_DIR)/results.csv
-	
+	echo "TID,Total Exec Time,Total Expanded Grids,Max Depth,Max Queued Nodes,Execution Time (per thread),Grids Expanded (per thread)" >> $(BUILD_DIR)/results.csv	
 restart:
 	cd .. && make && cd bin/ && ./sudoku_solver -s 16 -f ${ARG}
 

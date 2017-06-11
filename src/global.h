@@ -20,31 +20,11 @@ struct Benchmark {
     struct per_thread {
         double execution_time;
         int grids_expanded;
-        double emplace_lock_time;
-        double find_lock_time;
-        double emplace_time;
-        double find_time;
-        int valid_grid_checks;
-        double valid_grid_check_time;
-        int reduction_checks;
-        double reduction_check_time;
-        int reductions;
-        double reduction_time;
-        int singleton_reduction_attempts;
-        double singleton_reduction_time;
-        int branching_attempts;
-        int branching_iterations;
-        double branching_reduction_time;
         
         char buffer[100];
         
         per_thread()
-            : execution_time(0.0), grids_expanded(0), emplace_lock_time(0.0),
-              find_lock_time(0.0), emplace_time(0.0), find_time(0.0),
-              valid_grid_checks(0), valid_grid_check_time(0.0), reduction_checks(0),
-              reduction_check_time(0.0), reductions(0), reduction_time(0.0),
-              singleton_reduction_attempts(0), singleton_reduction_time(0.0), 
-              branching_attempts(0), branching_iterations(0), branching_reduction_time(0.0) { }
+            : execution_time(0.0), grids_expanded(0) { }
     };
     std::map<std::thread::id, per_thread> results;
 
@@ -78,22 +58,7 @@ struct Benchmark {
                     << depth << ","
                     << max_queued_nodes << ","
                     << i.second.execution_time << ","
-                    << i.second.grids_expanded << ","
-                    << i.second.emplace_lock_time << ","
-                    << i.second.find_lock_time << ","
-                    << i.second.emplace_time << ","
-                    << i.second.find_time << ","
-                    << i.second.valid_grid_checks << ","
-                    << i.second.valid_grid_check_time << ","
-                    << i.second.reduction_checks << ","
-                    << i.second.reduction_check_time << ","
-                    << i.second.reductions << ","
-                    << i.second.reduction_time << ","
-                    << i.second.singleton_reduction_attempts << ","
-                    << i.second.singleton_reduction_time << ","
-                    << i.second.branching_attempts << ","
-                    << i.second.branching_iterations << ","
-                    << i.second.branching_reduction_time
+                    << i.second.grids_expanded
                     << std::endl;
         });
 

@@ -217,36 +217,37 @@ bool SudokuGrid::valid_reduction(const int index, const int cell_value) {
 }
 
 bool SudokuGrid::valid_grid() {
-    // check row & column
     vector<int> row_values, col_values;
-    for(int i = 0; i < grid.size(); i+=size) {
-        for(int j = 0; j < size; j++) {
-            #ifdef TEST
-            cout << i + j << "  ";
-            #endif
-            row_values.push_back(i + j);
+    for(unsigned int i(0); i < grid.size(); i+=size) {
+        for(unsigned int j(0); j < size; j++) {
+            int index(i + j);
+            if(grid.at(index).is_singleton())
+                row_values.push_back(grid.at(index).possible_values().at(0));
         }
         sort(row_values.begin(), row_values.end());
-        if(!(unique(row_values.begin(), row_values.end()) == row_values.end())) return false;
+        if(adjacent_find(row_values.begin(), row_values.end()) != row_values.end()) {
+            return false;
+        }
         row_values.clear();
     }
-    for(int i = 0; i < size; i++) {
-        for(int j = 0; j < grid.size(); j+=size) {
-            #ifdef TEST
-            cout << i + j << "  ";
-            #endif
-            col_values.push_back(i + j);
+    for(unsigned int i(0); i < size; i++) {
+        for(unsigned int j(0); j < grid.size(); j+=size) {
+            int index(i + j);
+            if(grid.at(index).is_singleton())
+                col_values.push_back(grid.at(index).possible_values().at(0));
         }
         sort(col_values.begin(), col_values.end());
-        if(!(unique(col_values.begin(), col_values.end()) == col_values.end())) return false;
+        if(adjacent_find(col_values.begin(), col_values.end()) != col_values.end()) {
+            return false;
+        }
         col_values.clear();
     }
-    // check each subgrid
+    
     vector<vector<int>> subgrid(sqrt(size), vector<int>());
-    for(int offset = 0; offset < size; offset+=sqrt(size)) {
-        for(int i = 0; i < sqrt(size); i++) {
-            for(int j = 0; j < sqrt(size); j++) {
-                for(int k = 0; k < sqrt(size); k++) {
+    for(unsigned int offset(0); offset < size; offset+=sqrt(size)) {
+        for(int i(0); i < sqrt(size); i++) {
+            for(int j(0); j < sqrt(size); j++) {
+                for(int k(0); k < sqrt(size); k++) {
                     int index = (i + offset) * size + (j + (k*sqrt(size)));
                     if(grid.at(index).is_singleton()) {
                         subgrid.at(k).push_back(grid.at(index).possible_values().at(0));
@@ -257,10 +258,12 @@ bool SudokuGrid::valid_grid() {
         bool rv = true;
         for_each(subgrid.begin(), subgrid.end(), [&](auto &i) { 
             sort(i.begin(), i.end());
-            if(!(unique(i.begin(), i.end()) == i.end())) rv = false;
+            if(adjacent_find(i.begin(), i.end()) != i.end()) rv = false;
             i.clear();
         });
-        if(!rv) return false;
+        if(!rv) {
+            return false;
+        }
     }
     return true;
 }
